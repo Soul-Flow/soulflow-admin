@@ -1,4 +1,4 @@
-# 🌸 Flower Shop - Frontend (`flowershop-fe`)
+# 🌸 SoulFlow - Admin Dashboard (`soulflow-admin`)
 
 Dự án tốt nghiệp: Website Cửa hàng hoa.
 Mã nguồn Frontend được xây dựng bằng **Next.js (App Router)** và quản lý gói bằng **Bun**.
