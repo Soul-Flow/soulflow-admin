@@ -6,7 +6,7 @@ on:
     paths:
       - "soulflow-admin/**"
   pull_request:
-    branches: ["develop"]
+    branches: ["develop", "main"]
     paths:
       - "soulflow-admin/**"
 

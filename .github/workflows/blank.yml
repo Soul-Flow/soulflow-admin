@@ -9,7 +9,7 @@ on:
     paths:
       - "soulflow-admin/**" # Chỉ chạy khi có sửa đổi bên trong thư mục Frontend
   pull_request:
-    branches: ["develop"]
+    branches: ["develop", "main"]
     paths:
       - "soulflow-admin/**"
 
