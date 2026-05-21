@@ -4,11 +4,14 @@ name: CI
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
+    branches: ["develop", "main"]
+    paths:
+      - "soulflow-admin/**" # Chỉ chạy khi có sửa đổi bên trong thư mục Frontend
   pull_request:
-    branches: [ "main" ]
+    branches: ["develop"]
+    paths:
+      - "soulflow-admin/**"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
