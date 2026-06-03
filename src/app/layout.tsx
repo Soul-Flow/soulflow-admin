@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "FlowerShop Admin",
-	description: "Bảng điều khiển quản trị FlowerShop",
+	title: "SoulFlow Admin",
+	description: "Bảng điều khiển quản trị SoulFlow",
 };
 
 export default function RootLayout({

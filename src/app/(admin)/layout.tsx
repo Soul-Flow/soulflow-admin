@@ -52,7 +52,7 @@ export default function AdminLayout({
 					<div className="flex h-14 items-center border-b px-4 lg:h-15 lg:px-6">
 						<Link href="/" className="flex items-center gap-2 font-semibold">
 							<Flower2 className="h-6 w-6 text-primary" />
-							<span className="">FlowerShop Admin</span>
+							<span className="">SoulFlow Admin</span>
 						</Link>
 
 						<DropdownMenu>
