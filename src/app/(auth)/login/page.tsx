@@ -129,7 +129,7 @@ export default function LoginPage() {
 				<div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
 					<Flower2 className="h-6 w-6 text-primary" />
 				</div>
-				<CardTitle className="text-2xl font-bold">FlowerShop Admin</CardTitle>
+				<CardTitle className="text-2xl font-bold">SoulFlow Admin</CardTitle>
 				<CardDescription>
 					Đăng nhập để truy cập bảng điều khiển quản trị.
 				</CardDescription>
