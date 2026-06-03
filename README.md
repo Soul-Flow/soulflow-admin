@@ -16,7 +16,7 @@ curl -fsSL https://bun.sh/install | bash
 # Setup
 **Bước 1: Clone dự án về máy**
 \`\`\`
-git clone https://github.com/nhockevin/flowershop-fe.git
+git clone https://github.com/Soul-Flow/soulflow-admin.git
 cd flowershop-fe
 \`\`\`
 
