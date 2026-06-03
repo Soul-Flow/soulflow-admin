@@ -3,12 +3,8 @@ name: Next.js CI with Bun
 on:
   push:
     branches: ["develop", "main"]
-    paths:
-      - "soulflow-admin/**"
   pull_request:
     branches: ["develop", "main"]
-    paths:
-      - "soulflow-admin/**"
 
 jobs:
   build:
