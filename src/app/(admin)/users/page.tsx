@@ -74,6 +74,22 @@ const data: UserResponse[] = [
 		role: "customer",
 		status: "active",
 	},
+	{
+		id: "USR-009",
+		username: "tan_huy",
+		fullname: "Mai Tấn Huy",
+		email: "huy.mai@gmail.com",
+		role: "admin",
+		status: "active",
+	},
+	{
+		id: "USR-010",
+		username: "anh_tuan",
+		fullname: "Bùi Anh Tuấn",
+		email: "tuan.anh@gmail.com",
+		role: "customer",
+		status: "locked",
+	},
 ];
 
 // ─── Page component ─────────────────────────────────────────────────────────────
