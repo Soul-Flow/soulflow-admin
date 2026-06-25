@@ -1,4 +1,4 @@
-# 🌸 SoulFlow - Admin Dashboard (`soulflow-admin`)
+# 🌸 SoulFlow - Web (`soulflow-web`)
 
 Dự án tốt nghiệp: Website Cửa hàng hoa.
 Mã nguồn Frontend được xây dựng bằng **Next.js (App Router)** và quản lý gói bằng **Bun**.
@@ -16,7 +16,7 @@ curl -fsSL https://bun.sh/install | bash
 # Setup
 **Bước 1: Clone dự án về máy**
 \`\`\`
-git clone https://github.com/Soul-Flow/soulflow-admin.git
+git clone https://github.com/nhockevin/flowershop-fe.git
 cd flowershop-fe
 \`\`\`
 

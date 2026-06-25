@@ -2,9 +2,9 @@ name: Next.js CI with Bun
 
 on:
   push:
-    branches: ["develop", "main"]
+    branches: ["main", "develop"]
   pull_request:
-    branches: ["develop", "main"]
+    branches: ["main", "develop"]
 
 jobs:
   build:

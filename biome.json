@@ -6,7 +6,8 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": ["**", "!src/app/globals.css"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -15,10 +16,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
-			"security": {
-				"noDangerouslySetInnerHtml": "off"
-			}
+			"recommended": true
 		}
 	},
 	"javascript": {
@@ -32,11 +30,6 @@
 			"source": {
 				"organizeImports": "on"
 			}
-		}
-	},
-	"css": {
-		"parser": {
-			"tailwindDirectives": true
 		}
 	}
 }
