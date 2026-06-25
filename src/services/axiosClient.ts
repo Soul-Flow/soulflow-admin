@@ -5,21 +5,12 @@ const axiosClient = axios.create({
 	headers: {
 		"Content-Type": "application/json",
 	},
-	// Thêm cái timeout để lỡ Backend sập thì FE không bị treo quay đều mãi
-	timeout: 10000,
 });
 
-// Xử lý trước khi GỬI request đi (Nhét Token vào)
+// Chỗ này để sau này nhét Token vào (Interceptor)
 axiosClient.interceptors.request.use(
 	(config) => {
-		// typeof window !== 'undefined' để đảm bảo code chỉ chạy trên trình duyệt (tránh lỗi SSR của Next.js)
-		if (typeof window !== "undefined") {
-			const token = localStorage.getItem("accessToken");
-			if (token && config.headers) {
-				// Nhét token vào chuẩn Bearer của JWT
-				config.headers.Authorization = `Bearer ${token}`;
-			}
-		}
+		// TODO: Gắn token vào header Authorization ở đây
 		return config;
 	},
 	(error) => {
@@ -27,25 +18,13 @@ axiosClient.interceptors.request.use(
 	},
 );
 
-// Xử lý sau khi NHẬN response về (Bắt lỗi 401)
+// Chỗ này để xử lý lỗi đồng loạt (ví dụ: hết hạn token thì văng ra trang login)
 axiosClient.interceptors.response.use(
 	(response) => {
-		// Chỉ lấy cái ruột data trả về cho code FE gọn nhẹ
-		if (response?.data) {
-			return response.data;
-		}
-		return response;
+		return response.data;
 	},
 	(error) => {
-		if (error.response?.status === 401) {
-			// Lỗi 401: Token hết hạn hoặc chưa đăng nhập
-			console.warn("Phiên đăng nhập hết hạn!");
-
-			// Tùy chọn: Tự động xóa token cũ và đá về trang chủ/login
-			if (typeof window !== "undefined") {
-				localStorage.removeItem("accessToken");
-			}
-		}
+		// TODO: Xử lý lỗi 401, 403...
 		return Promise.reject(error);
 	},
 );

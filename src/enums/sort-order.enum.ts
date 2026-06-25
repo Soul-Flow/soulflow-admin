@@ -1,0 +1,8 @@
+export enum SortOrder {
+	ASC = "ASC",
+	DESC = "DESC",
+	PRICE_ASC = "PRICE_ASC",
+	PRICE_DESC = "PRICE_DESC",
+	SALES_ASC = "SALES_ASC",
+	SALES_DESC = "SALES_DESC",
+}

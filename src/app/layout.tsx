@@ -1,26 +1,61 @@
-import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
-import { Toaster } from "react-hot-toast";
-import { BoutiqueProviders } from "@/providers/SoulflowProviders";
-import { ThemeProvider } from "@/providers/ThemeProvider";
-import "./globals.css";
-import { AuthProvider } from "@/providers/AuthProviders";
-import TanStackProvider from "@/providers/TanStackProvider";
+// import type { Metadata } from "next";
+// import { Geist, Geist_Mono } from "next/font/google";
+// import { Toaster } from "@/components/ui/sonner";
+// import "./globals.css";
 
-const inter = Inter({
-	variable: "--font-geist-sans",
+// const geistSans = Geist({
+// 	variable: "--font-geist-sans",
+// 	subsets: ["latin"],
+// });
+
+// const geistMono = Geist_Mono({
+// 	variable: "--font-geist-mono",
+// 	subsets: ["latin"],
+// });
+
+// export const metadata: Metadata = {
+// 	title: "SoulFlow Admin",
+// 	description: "Bảng điều khiển quản trị SoulFlow",
+// };
+
+// export default function RootLayout({
+// 	children,
+// }: Readonly<{
+// 	children: React.ReactNode;
+// }>) {
+// 	return (
+// 		<html
+// 			lang="vi"
+// 			className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+// 		>
+// 			<body className="min-h-full flex flex-col">
+// 				{children}
+// 				<Toaster richColors position="top-right" />
+// 			</body>
+// 		</html>
+// 	);
+// }
+
+import type { Metadata } from "next";
+import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
+import "./globals.css";
+
+// 1. Font cho chữ bình thường (Body)
+const jakarta = Plus_Jakarta_Sans({
+	variable: "--font-sans",
 	subsets: ["latin", "vietnamese"],
 });
 
+// 2. Font cho Tiêu đề (Heading - cong cong điệu đà)
 const playfair = Playfair_Display({
 	variable: "--font-serif",
 	subsets: ["latin", "vietnamese"],
 });
 
 export const metadata: Metadata = {
-	title: "SoulFlow",
-	description:
-		"SoulFlow - Nơi kết nối tâm hồn và thiên nhiên. Khám phá bộ sưu tập thiết kế hoa độc đáo.",
+	title: "SoulFlow Admin",
+	description: "Bảng điều khiển quản trị SoulFlow",
 };
 
 export default function RootLayout({
@@ -31,34 +66,13 @@ export default function RootLayout({
 	return (
 		<html
 			lang="vi"
-			className={`${inter.variable} ${playfair.variable} h-full antialiased`}
-			suppressHydrationWarning
+			// Nhúng 2 biến font này vào thẻ html để toàn dự án nhận diện được
+			className={`${jakarta.variable} ${playfair.variable} h-full antialiased`}
 		>
-			<body className="min-h-full flex flex-col bg-sf-bg text-sf-fg transition-colors duration-300">
-				<TanStackProvider>
-					<AuthProvider>
-						<ThemeProvider>
-							<BoutiqueProviders>{children}</BoutiqueProviders>
-							<Toaster
-								position="top-right"
-								toastOptions={{
-									style: {
-										background: "#2A2A2A",
-										color: "#fff",
-										borderRadius: "10px",
-										border: "1px solid #4A4A4A",
-									},
-									success: {
-										iconTheme: {
-											primary: "#4ade80",
-											secondary: "#fff",
-										},
-									},
-								}}
-							/>
-						</ThemeProvider>
-					</AuthProvider>
-				</TanStackProvider>
+			{/* Thêm class font-sans để mặc định mọi chữ đều dùng font Jakarta */}
+			<body className="min-h-full flex flex-col font-sans">
+				{children}
+				<Toaster richColors position="top-right" />
 			</body>
 		</html>
 	);

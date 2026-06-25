@@ -1,50 +1,85 @@
-// src/services/productService.ts
-
-import type { ApiResponse } from "@/types/api.type";
-import {
-	mapProductResponseToFE,
-	type ProductFE,
-	type ProductResponseDTO,
-} from "@/types/product.type";
-import axiosClient from "./axiosClient";
+import { SortOrder } from "../enums/sort-order.enum";
+import type { PageResponse } from "../interfaces/responses/page-response.interface";
+import type { ProductResponse } from "../interfaces/responses/product-response.interface";
+import type { ProductRequest } from "../interfaces/resquests/product-request.interface";
+import api from "../lib/api";
 
 export const productService = {
-	getAllFlower: async (): Promise<ProductFE[]> => {
-		try {
-			// 1. Gọi API, quy định rõ kiểu trả về thô là ApiResponse bọc một mảng ProductResponseDTO
-			const rawResponse: ApiResponse<ProductResponseDTO[]> =
-				await axiosClient.get("/products");
+	save: async (
+		request: ProductRequest,
+		files: File[],
+	): Promise<ProductResponse> => {
+		const formData = new FormData();
 
-			// Lấy chính xác cái mảng dữ liệu nằm bên trong property 'data' của ApiResponse
-			const rawList = rawResponse.data;
+		formData.append(
+			"request",
+			new Blob([JSON.stringify(request)], {
+				type: "application/json",
+			}),
+		);
 
-			// Chắc cú kiểm tra xem nó có phải là mảng không
-			if (!Array.isArray(rawList)) {
-				return [];
+		if (files && files.length > 0) {
+			for (const file of files) {
+				formData.append("files", file);
 			}
-
-			// 2. Chạy qua máy xay Mapper để gọt data thô (BE) thành data sạch (FE)
-			return rawList.map(mapProductResponseToFE);
-		} catch (error) {
-			console.warn("⚠️ API '/products' lỗi hoặc BE chưa chạy.", error);
-			// Lấy danh sách lỗi thì trả về MẢNG RỖNG, tuyệt đối không dùng notFound() ở đây
-			return [];
 		}
+
+		const response = await api.post<ProductResponse>("/product", formData);
+
+		return response.data;
 	},
 
-	getFlowerById: async (id: number): Promise<ProductFE | null> => {
-		try {
-			const rawResponse: ApiResponse<ProductResponseDTO> =
-				await axiosClient.get(`/products/${id}`);
+	deleteByPk: async (pk: number): Promise<void> => {
+		await api.delete(`/product/${pk}`);
+	},
 
-			if (!rawResponse.data) return null;
+	findByPk: async (pk: number): Promise<ProductResponse> => {
+		const response = await api.get<ProductResponse>(`/product/${pk}`);
 
-			// 2. Dùng Mapper gọt data cho 1 sản phẩm
-			return mapProductResponseToFE(rawResponse.data);
-		} catch (error) {
-			console.warn("⚠️ API '/products/:id' lỗi hoặc BE chưa chạy.", error);
-			// Lấy chi tiết bị lỗi thì trả về null (Để bên giao diện check == null thì mới gọi notFound() đá qua trang 404)
-			return null;
-		}
+		return response.data;
+	},
+
+	filter: async ({
+		keyword = null,
+		minPrice = null,
+		maxPrice = null,
+		fromDate = null,
+		toDate = null,
+		categoryPk = null,
+		available = false,
+		deleted = false,
+		sortOrder = SortOrder.DESC,
+		pageNumber = 0,
+		pageSize = 5,
+	}: {
+		keyword: string | null;
+		minPrice: number | null;
+		maxPrice: number | null;
+		fromDate: string | null;
+		toDate: string | null;
+		categoryPk: number | null;
+		available: boolean;
+		deleted: boolean;
+		sortOrder: SortOrder;
+		pageNumber: number;
+		pageSize: number;
+	}): Promise<PageResponse<ProductResponse>> => {
+		const response = await api.get<PageResponse<ProductResponse>>("/product", {
+			params: {
+				keyword,
+				minPrice,
+				maxPrice,
+				fromDate,
+				toDate,
+				categoryPk,
+				available,
+				deleted,
+				sortOrder,
+				pageNumber,
+				pageSize,
+			},
+		});
+
+		return response.data;
 	},
 };
