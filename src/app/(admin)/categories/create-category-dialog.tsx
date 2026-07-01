@@ -19,23 +19,30 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import useCategoryStore from "@/stores/categoryStore";
 
 const categorySchema = z.object({
 	nameVn: z
 		.string()
 		.min(1, "Tên tiếng Việt là bắt buộc")
 		.min(2, "Tên tiếng Việt phải có ít nhất 2 ký tự"),
-	nameEn: z
+	nameEng: z
 		.string()
 		.min(1, "Tên tiếng Anh là bắt buộc")
 		.min(2, "Tên tiếng Anh phải có ít nhất 2 ký tự"),
-	description: z.string().optional(),
+	descriptionVn: z.string().optional(),
+	descriptionEng: z.string().optional(),
 });
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
 
-export function CreateCategoryDialog() {
+interface CreateCategoryDialogProps {
+	onCreated?: () => void;
+}
+
+export function CreateCategoryDialog({ onCreated }: CreateCategoryDialogProps) {
 	const [open, setOpen] = useState(false);
+	const { save } = useCategoryStore();
 
 	const {
 		register,
@@ -46,19 +53,29 @@ export function CreateCategoryDialog() {
 		resolver: zodResolver(categorySchema),
 		defaultValues: {
 			nameVn: "",
-			nameEn: "",
-			description: "",
+			nameEng: "",
+			descriptionVn: "",
+			descriptionEng: "",
 		},
 	});
 
-	const onSubmit = (data: CategoryFormValues) => {
-		// Mock: In real app, this would call the API
-		console.log("Creating category:", data);
-		toast.success("Đã tạo danh mục mới thành công!", {
-			description: `Danh mục "${data.nameVn}" đã được thêm vào hệ thống.`,
-		});
-		reset();
-		setOpen(false);
+	const onSubmit = async (data: CategoryFormValues) => {
+		try {
+			await save({
+				nameVn: data.nameVn,
+				nameEng: data.nameEng,
+				descriptionVn: data.descriptionVn ?? "",
+				descriptionEng: data.descriptionEng ?? "",
+			});
+			toast.success("Đã tạo danh mục mới thành công!", {
+				description: `Danh mục "${data.nameVn}" đã được thêm vào hệ thống.`,
+			});
+			reset();
+			setOpen(false);
+			onCreated?.();
+		} catch {
+			toast.error("Tạo danh mục thất bại. Vui lòng thử lại.");
+		}
 	};
 
 	const handleOpenChange = (isOpen: boolean) => {
@@ -101,27 +118,37 @@ export function CreateCategoryDialog() {
 					</div>
 
 					<div className="grid gap-2">
-						<Label htmlFor="create-nameEn">Tên tiếng Anh *</Label>
+						<Label htmlFor="create-nameEng">Tên tiếng Anh *</Label>
 						<Input
-							id="create-nameEn"
+							id="create-nameEng"
 							placeholder="VD: Fresh Flowers"
-							{...register("nameEn")}
-							aria-invalid={!!errors.nameEn}
+							{...register("nameEng")}
+							aria-invalid={!!errors.nameEng}
 						/>
-						{errors.nameEn && (
+						{errors.nameEng && (
 							<p className="text-xs text-destructive">
-								{errors.nameEn.message}
+								{errors.nameEng.message}
 							</p>
 						)}
 					</div>
 
 					<div className="grid gap-2">
-						<Label htmlFor="create-description">Mô tả</Label>
+						<Label htmlFor="create-descriptionVn">Mô tả tiếng Anh *</Label>
 						<Textarea
-							id="create-description"
+							id="create-descriptionEng"
+							placeholder="Enter category description..."
+							rows={3}
+							{...register("descriptionEng")}
+						/>
+					</div>
+
+					<div className="grid gap-2">
+						<Label htmlFor="create-descriptionVn">Mô tả tiếng Việt *</Label>
+						<Textarea
+							id="create-descriptionVn"
 							placeholder="Nhập mô tả ngắn về danh mục..."
 							rows={3}
-							{...register("description")}
+							{...register("descriptionVn")}
 						/>
 					</div>
 

@@ -2,7 +2,8 @@
 
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { Eye, MoreHorizontal, RefreshCcw, Trash } from "lucide-react";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -32,7 +33,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
 	Sheet,
@@ -41,67 +41,120 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import { OrderStatus } from "@/enums/order-status.enum";
+import type { OrderResponse } from "@/interfaces/responses/order-response.interface";
+import useOrderStore from "@/stores/orderStore";
 
-export type OrderStatus = "pending" | "processing" | "completed" | "cancelled";
-
-export type Order = {
-	id: string;
-	customerName: string;
-	totalAmount: number;
-	date: string;
-	status: OrderStatus;
+const statusConfig: Record<string, { label: string; className: string }> = {
+	[OrderStatus.PENDING]: {
+		label: "Chờ xử lý",
+		className:
+			"bg-amber-500/15 text-amber-700 border-amber-500/25 dark:text-amber-400",
+	},
+	[OrderStatus.WAITING_PAYMENT]: {
+		label: "Chờ thanh toán",
+		className:
+			"bg-purple-500/15 text-purple-700 border-purple-500/25 dark:text-purple-400",
+	},
+	[OrderStatus.PAID]: {
+		label: "Đã thanh toán",
+		className:
+			"bg-teal-500/15 text-teal-700 border-teal-500/25 dark:text-teal-400",
+	},
+	[OrderStatus.PROCESSING]: {
+		label: "Đang xử lý",
+		className:
+			"bg-blue-500/15 text-blue-700 border-blue-500/25 dark:text-blue-400",
+	},
+	[OrderStatus.SHIPPED]: {
+		label: "Đang giao",
+		className:
+			"bg-indigo-500/15 text-indigo-700 border-indigo-500/25 dark:text-indigo-400",
+	},
+	[OrderStatus.DELIVERED]: {
+		label: "Đã giao",
+		className:
+			"bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400",
+	},
+	[OrderStatus.CANCELLED]: {
+		label: "Đã hủy",
+		className: "bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400",
+	},
 };
 
-const statusConfig: Record<OrderStatus, { label: string; className: string }> =
-	{
-		pending: {
-			label: "Chờ xử lý",
-			className:
-				"bg-amber-500/15 text-amber-700 border-amber-500/25 dark:text-amber-400",
-		},
-		processing: {
-			label: "Đang xử lý",
-			className:
-				"bg-blue-500/15 text-blue-700 border-blue-500/25 dark:text-blue-400",
-		},
-		completed: {
-			label: "Hoàn thành",
-			className:
-				"bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400",
-		},
-		cancelled: {
-			label: "Đã hủy",
-			className:
-				"bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400",
-		},
-	};
-
-function ActionCell({ row }: { row: Row<Order> }) {
+function ActionCell({
+	row,
+	onMutated,
+}: {
+	row: Row<OrderResponse>;
+	onMutated: () => void;
+}) {
 	const order = row.original;
+	const { save, deleteByPk, loading } = useOrderStore();
 	const [showViewSheet, setShowViewSheet] = useState(false);
 	const [showEditDialog, setShowEditDialog] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [newStatus, setNewStatus] = useState<string>(order.status);
+	const searchParams = useSearchParams();
+	const router = useRouter();
+	const pathname = usePathname();
 
-	const _isLocked = false; // Not applicable here but keeping consistent state pattern
+	useEffect(() => {
+		if (
+			searchParams.get("action") === "view" &&
+			searchParams.get("keyword") === order.code
+		) {
+			setShowViewSheet(true);
+		}
+	}, [searchParams, order.code]);
 
-	const handleUpdateStatus = () => {
-		setShowEditDialog(false);
-		toast.success(`Đã cập nhật trạng thái đơn hàng ${order.id}!`, {
-			description: "Trạng thái đơn hàng đã được thay đổi thành công.",
-		});
+	const handleOpenChange = (open: boolean) => {
+		setShowViewSheet(open);
+		if (!open && searchParams.get("action") === "view") {
+			router.replace(pathname);
+		}
 	};
 
-	const handleDelete = () => {
-		setShowDeleteDialog(false);
-		toast.success(`Đã xóa đơn hàng ${order.id} thành công!`, {
-			description: "Đơn hàng đã được xóa khỏi hệ thống.",
-		});
-	};
-
-	const formattedAmount = new Intl.NumberFormat("vi-VN", {
+	const totalNum = parseFloat(order.total);
+	const formattedTotal = new Intl.NumberFormat("vi-VN", {
 		style: "currency",
 		currency: "VND",
-	}).format(order.totalAmount);
+	}).format(totalNum);
+
+	const handleUpdateStatus = async () => {
+		try {
+			await save({
+				pk: Number(order.pk),
+				status: newStatus as OrderStatus,
+				fullname: order.fullname,
+				phone: order.phone,
+				address: order.address,
+				accountPk: Number(order.accountPk),
+				orderDetailRequests: [],
+			});
+			toast.success(`Đã cập nhật trạng thái đơn hàng ${order.code}!`);
+			setShowEditDialog(false);
+			onMutated();
+		} catch {
+			toast.error("Cập nhật trạng thái thất bại. Vui lòng thử lại.");
+		}
+	};
+
+	const handleDelete = async () => {
+		try {
+			await deleteByPk(Number(order.pk));
+			toast.success(`Đã xóa đơn hàng ${order.code} thành công!`);
+			setShowDeleteDialog(false);
+			onMutated();
+		} catch {
+			toast.error("Xóa đơn hàng thất bại. Vui lòng thử lại.");
+		}
+	};
+
+	const statusInfo = statusConfig[order.status] ?? {
+		label: order.status,
+		className: "",
+	};
 
 	return (
 		<>
@@ -119,65 +172,93 @@ function ActionCell({ row }: { row: Row<Order> }) {
 						className="cursor-pointer"
 						onSelect={() => setShowViewSheet(true)}
 					>
-						<Eye className="mr-2 h-4 w-4" />
-						Xem chi tiết
+						<Eye className="mr-2 h-4 w-4" /> Xem chi tiết
 					</DropdownMenuItem>
 					<DropdownMenuItem
 						className="cursor-pointer"
 						onSelect={() => setShowEditDialog(true)}
 					>
-						<RefreshCcw className="mr-2 h-4 w-4" />
-						Cập nhật trạng thái
+						<RefreshCcw className="mr-2 h-4 w-4" /> Cập nhật trạng thái
 					</DropdownMenuItem>
 					<DropdownMenuSeparator />
 					<DropdownMenuItem
 						className="cursor-pointer text-red-600 focus:text-red-600"
 						onSelect={() => setShowDeleteDialog(true)}
 					>
-						<Trash className="mr-2 h-4 w-4" />
-						Xóa đơn hàng
+						<Trash className="mr-2 h-4 w-4" /> Xóa đơn hàng
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
 
-			{/* VIEW SHEET */}
-			<Sheet open={showViewSheet} onOpenChange={setShowViewSheet}>
+			<Sheet open={showViewSheet} onOpenChange={handleOpenChange}>
 				<SheetContent className="overflow-y-auto">
 					<SheetHeader>
 						<SheetTitle>Chi Tiết Đơn Hàng</SheetTitle>
-						<SheetDescription>Mã đơn: {order.id}</SheetDescription>
+						<SheetDescription>Mã đơn: {order.code}</SheetDescription>
 					</SheetHeader>
 					<div className="mt-6 space-y-4 text-sm">
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
 							<span className="font-medium text-muted-foreground">
 								Khách hàng:
 							</span>
-							<span className="col-span-2 font-medium">
-								{order.customerName}
+							<span className="col-span-2 font-medium">{order.fullname}</span>
+						</div>
+						<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<span className="font-medium text-muted-foreground">
+								Điện thoại:
 							</span>
+							<span className="col-span-2">{order.phone}</span>
+						</div>
+						<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<span className="font-medium text-muted-foreground">
+								Địa chỉ:
+							</span>
+							<span className="col-span-2">{order.address}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
 							<span className="font-medium text-muted-foreground">
 								Tổng tiền:
 							</span>
-							<span className="col-span-2 font-medium">{formattedAmount}</span>
+							<span className="col-span-2 font-medium">{formattedTotal}</span>
+						</div>
+						<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<span className="font-medium text-muted-foreground">
+								Phí ship:
+							</span>
+							<span className="col-span-2 font-medium">
+								{new Intl.NumberFormat("vi-VN", {
+									style: "currency",
+									currency: "VND",
+								}).format(parseFloat(order.shippingFee || "0"))}
+							</span>
+						</div>
+						<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<span className="font-medium text-muted-foreground">
+								Thanh toán:
+							</span>
+							<span className="col-span-2 uppercase font-medium">
+								{order.paymentMethod || "COD"}
+							</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
 							<span className="font-medium text-muted-foreground">
 								Ngày đặt:
 							</span>
-							<span className="col-span-2">{order.date}</span>
+							<span className="col-span-2">{order.createdDate}</span>
+						</div>
+						<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<span className="font-medium text-muted-foreground">
+								Hết hạn:
+							</span>
+							<span className="col-span-2">{order.expiredDate}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
 							<span className="font-medium text-muted-foreground">
 								Trạng thái:
 							</span>
 							<span className="col-span-2">
-								<Badge
-									variant="outline"
-									className={statusConfig[order.status].className}
-								>
-									{statusConfig[order.status].label}
+								<Badge variant="outline" className={statusInfo.className}>
+									{statusInfo.label}
 								</Badge>
 							</span>
 						</div>
@@ -185,27 +266,31 @@ function ActionCell({ row }: { row: Row<Order> }) {
 				</SheetContent>
 			</Sheet>
 
-			{/* EDIT DIALOG */}
 			<Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Cập Nhật Đơn Hàng</DialogTitle>
 						<DialogDescription>
-							Chỉnh sửa thông tin đơn hàng {order.id}.
+							Chỉnh sửa trạng thái đơn hàng {order.code}.
 						</DialogDescription>
 					</DialogHeader>
 					<div className="grid gap-4 py-4">
 						<div className="grid gap-2">
 							<Label>Khách hàng</Label>
-							<Input defaultValue={order.customerName} disabled />
+							<span className="text-sm font-medium">{order.fullname}</span>
 						</div>
 						<div className="grid gap-2">
 							<Label>Trạng thái mới</Label>
-							<select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50">
-								<option value="pending">Chờ xử lý</option>
-								<option value="processing">Đang xử lý</option>
-								<option value="completed">Hoàn thành</option>
-								<option value="cancelled">Đã hủy</option>
+							<select
+								className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+								value={newStatus}
+								onChange={(e) => setNewStatus(e.target.value)}
+							>
+								{Object.entries(statusConfig).map(([val, cfg]) => (
+									<option key={val} value={val}>
+										{cfg.label}
+									</option>
+								))}
 							</select>
 						</div>
 					</div>
@@ -213,26 +298,31 @@ function ActionCell({ row }: { row: Row<Order> }) {
 						<Button variant="outline" onClick={() => setShowEditDialog(false)}>
 							Hủy
 						</Button>
-						<Button onClick={handleUpdateStatus}>Lưu thay đổi</Button>
+						<Button onClick={handleUpdateStatus} disabled={loading}>
+							{loading ? "Đang lưu..." : "Lưu thay đổi"}
+						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 
-			{/* DELETE ALERT DIALOG */}
 			<AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Xác nhận xóa đơn hàng</AlertDialogTitle>
 						<AlertDialogDescription>
-							Bạn có chắc chắn muốn xóa đơn hàng <strong>{order.id}</strong> của
-							khách hàng <strong>{order.customerName}</strong>? Hành động này
+							Bạn có chắc chắn muốn xóa đơn hàng <strong>{order.code}</strong>{" "}
+							của khách hàng <strong>{order.fullname}</strong>? Hành động này
 							không thể hoàn tác.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
-						<AlertDialogAction variant="destructive" onClick={handleDelete}>
-							Xóa đơn hàng
+						<AlertDialogAction
+							variant="destructive"
+							onClick={handleDelete}
+							disabled={loading}
+						>
+							{loading ? "Đang xóa..." : "Xóa đơn hàng"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -241,58 +331,117 @@ function ActionCell({ row }: { row: Row<Order> }) {
 	);
 }
 
-export const columns: ColumnDef<Order>[] = [
-	{
-		accessorKey: "id",
-		header: "Mã đơn hàng",
-		cell: ({ row }) => (
-			<span className="font-mono text-xs font-medium">
-				{row.getValue("id")}
-			</span>
-		),
-	},
-	{
-		accessorKey: "customerName",
-		header: "Khách hàng",
-		cell: ({ row }) => (
-			<span className="font-medium">{row.getValue("customerName")}</span>
-		),
-	},
-	{
-		accessorKey: "totalAmount",
-		header: "Tổng tiền",
-		cell: ({ row }) => {
-			const amount = parseFloat(row.getValue("totalAmount"));
-			const formatted = new Intl.NumberFormat("vi-VN", {
-				style: "currency",
-				currency: "VND",
-			}).format(amount);
-			return <span className="font-medium tabular-nums">{formatted}</span>;
+export function columns({
+	onMutated,
+}: {
+	onMutated: () => void;
+}): ColumnDef<OrderResponse>[] {
+	return [
+		{
+			accessorKey: "pk",
+			header: "PK",
+			cell: ({ row }) => (
+				<span className="font-mono text-xs font-medium">
+					{row.getValue("pk")}
+				</span>
+			),
 		},
-	},
-	{
-		accessorKey: "date",
-		header: "Ngày đặt",
-		cell: ({ row }) => (
-			<span className="text-muted-foreground">{row.getValue("date")}</span>
-		),
-	},
-	{
-		accessorKey: "status",
-		header: "Trạng thái",
-		cell: ({ row }) => {
-			const status = row.getValue("status") as OrderStatus;
-			const config = statusConfig[status];
-			return (
-				<Badge variant="outline" className={config.className}>
-					{config.label}
-				</Badge>
-			);
+		{
+			accessorKey: "code",
+			header: "Mã đơn hàng",
+			cell: ({ row }) => (
+				<span className="font-mono text-xs font-medium">
+					{row.getValue("code")}
+				</span>
+			),
 		},
-	},
-	{
-		id: "actions",
-		header: () => <span className="sr-only">Hành động</span>,
-		cell: ({ row }) => <ActionCell row={row} />,
-	},
-];
+		{
+			accessorKey: "fullname",
+			header: "Khách hàng",
+			cell: ({ row }) => (
+				<span className="font-medium max-w-[150px] truncate inline-block align-middle">
+					{row.getValue("fullname")}
+				</span>
+			),
+		},
+		{
+			accessorKey: "phone",
+			header: "Điện thoại",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground">{row.getValue("phone")}</span>
+			),
+		},
+		{
+			accessorKey: "total",
+			header: "Tổng tiền",
+			cell: ({ row }) => {
+				const amount = parseFloat(row.getValue("total"));
+				return (
+					<span className="font-medium tabular-nums text-primary">
+						{new Intl.NumberFormat("vi-VN", {
+							style: "currency",
+							currency: "VND",
+						}).format(amount)}
+					</span>
+				);
+			},
+		},
+		{
+			accessorKey: "shippingFee",
+			header: "Phí ship",
+			cell: ({ row }) => {
+				const amount = parseFloat(row.getValue("shippingFee") || "0");
+				return (
+					<span className="font-medium tabular-nums text-muted-foreground text-sm">
+						{new Intl.NumberFormat("vi-VN", {
+							style: "currency",
+							currency: "VND",
+						}).format(amount)}
+					</span>
+				);
+			},
+		},
+		{
+			accessorKey: "paymentMethod",
+			header: "Thanh toán",
+			cell: ({ row }) => {
+				const method = row.getValue("paymentMethod") as string;
+				return (
+					<Badge
+						variant="outline"
+						className="bg-slate-500/15 text-slate-700 border-slate-500/25 dark:text-slate-400 uppercase"
+					>
+						{method || "COD"}
+					</Badge>
+				);
+			},
+		},
+		{
+			accessorKey: "createdDate",
+			header: "Ngày đặt",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground">
+					{row.getValue("createdDate")}
+				</span>
+			),
+		},
+		{
+			accessorKey: "status",
+			header: "Trạng thái",
+			cell: ({ row }) => {
+				const status = row.getValue("status") as string;
+				const config = statusConfig[status] ?? { label: status, className: "" };
+				return (
+					<Badge variant="outline" className={config.className}>
+						{config.label}
+					</Badge>
+				);
+			},
+		},
+		{
+			id: "actions",
+			header: () => <span className="sr-only">Hành động</span>,
+			cell: ({ row }) => <ActionCell row={row} onMutated={onMutated} />,
+		},
+	];
+}

@@ -1,9 +1,12 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { Edit, MoreHorizontal, Trash } from "lucide-react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -34,44 +37,79 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { DiscountResponse } from "@/interfaces/responses/discount-response.interface";
+import useDiscountStore from "@/stores/discountStore";
 
-import type { DiscountResponse, DiscountStatus } from "./discount.dto";
+const editSchema = z.object({
+	code: z.string().min(3, "Mã giảm giá phải có ít nhất 3 ký tự"),
+	descriptionVn: z.string().min(1, "Mô tả là bắt buộc"),
+	descriptionEng: z.string().optional(),
+	percentage: z.number({ message: "Phần trăm phải là số" }).min(1).max(100),
+	expiredDate: z.string().min(1, "Ngày hết hạn là bắt buộc"),
+});
 
-const statusConfig: Record<
-	DiscountStatus,
-	{ label: string; className: string }
-> = {
-	active: {
-		label: "Đang hoạt động",
-		className:
-			"bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400",
-	},
-	expired: {
-		label: "Đã hết hạn",
-		className: "bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400",
-	},
-	upcoming: {
-		label: "Sắp diễn ra",
-		className:
-			"bg-blue-500/15 text-blue-700 border-blue-500/25 dark:text-blue-400",
-	},
-};
+type EditFormValues = z.infer<typeof editSchema>;
 
-function ActionCell({ row }: { row: Row<DiscountResponse> }) {
+function ActionCell({
+	row,
+	onMutated,
+}: {
+	row: Row<DiscountResponse>;
+	onMutated: () => void;
+}) {
 	const discount = row.original;
+	const { save, deleteByPk, loading } = useDiscountStore();
 	const [showEditDialog, setShowEditDialog] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-	const handleEdit = () => {
-		setShowEditDialog(false);
-		toast.success(`Đã cập nhật mã giảm giá "${discount.code}" thành công!`);
+	const _isExpired =
+		discount.expired === "true" ||
+		discount.expired === (true as unknown as string);
+	const percentageNum = parseFloat(discount.percentage);
+
+	const {
+		register,
+		handleSubmit,
+		reset,
+		formState: { errors, isSubmitting },
+	} = useForm<EditFormValues>({
+		resolver: zodResolver(editSchema),
+		defaultValues: {
+			code: discount.code,
+			descriptionVn: discount.description,
+			descriptionEng: discount.description,
+			percentage: percentageNum,
+			expiredDate: discount.expiredDate,
+		},
+	});
+
+	const handleEdit = async (data: EditFormValues) => {
+		try {
+			await save({
+				pk: Number(discount.pk),
+				percentage: data.percentage,
+				descriptionVn: data.descriptionVn,
+				descriptionEng: data.descriptionEng ?? data.descriptionVn,
+				expiredDate: data.expiredDate,
+				productRequests: [],
+			});
+			toast.success(`Đã cập nhật mã giảm giá "${discount.code}" thành công!`);
+			setShowEditDialog(false);
+			onMutated();
+		} catch {
+			toast.error("Cập nhật mã giảm giá thất bại. Vui lòng thử lại.");
+		}
 	};
 
-	const handleDelete = () => {
-		setShowDeleteDialog(false);
-		toast.success(`Đã xóa mã giảm giá "${discount.code}" thành công!`, {
-			description: "Mã giảm giá đã được xóa khỏi hệ thống.",
-		});
+	const handleDelete = async () => {
+		try {
+			await deleteByPk(Number(discount.pk));
+			toast.success(`Đã xóa mã giảm giá "${discount.code}" thành công!`);
+			setShowDeleteDialog(false);
+			onMutated();
+		} catch {
+			toast.error("Xóa mã giảm giá thất bại. Vui lòng thử lại.");
+		}
 	};
 
 	return (
@@ -90,48 +128,99 @@ function ActionCell({ row }: { row: Row<DiscountResponse> }) {
 						className="cursor-pointer"
 						onSelect={() => setShowEditDialog(true)}
 					>
-						<Edit className="mr-2 h-4 w-4" />
-						Chỉnh sửa
+						<Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
 					</DropdownMenuItem>
 					<DropdownMenuSeparator />
 					<DropdownMenuItem
 						className="cursor-pointer text-red-600 focus:text-red-600"
 						onSelect={() => setShowDeleteDialog(true)}
 					>
-						<Trash className="mr-2 h-4 w-4" />
-						Xóa mã giảm giá
+						<Trash className="mr-2 h-4 w-4" /> Xóa mã giảm giá
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
 
-			<Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+			<Dialog
+				open={showEditDialog}
+				onOpenChange={(o) => {
+					setShowEditDialog(o);
+					if (!o) reset();
+				}}
+			>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Cập Nhật Mã Giảm Giá</DialogTitle>
 						<DialogDescription>
-							Chỉnh sửa thông tin mã giảm giá {discount.code}.
+							Chỉnh sửa thông tin mã {discount.code}.
 						</DialogDescription>
 					</DialogHeader>
-					<div className="grid gap-4 py-4">
-						<div className="grid gap-2">
-							<Label>Mã giảm giá</Label>
-							<Input defaultValue={discount.code} />
+					<form onSubmit={handleSubmit(handleEdit)}>
+						<div className="grid gap-4 py-4">
+							<div className="grid gap-2">
+								<Label>Mã giảm giá</Label>
+								<Input
+									{...register("code")}
+									aria-invalid={!!errors.code}
+									disabled
+								/>
+								{errors.code && (
+									<p className="text-xs text-destructive">
+										{errors.code.message}
+									</p>
+								)}
+							</div>
+							<div className="grid gap-2">
+								<Label>Mô tả</Label>
+								<Input
+									{...register("descriptionVn")}
+									aria-invalid={!!errors.descriptionVn}
+								/>
+								{errors.descriptionVn && (
+									<p className="text-xs text-destructive">
+										{errors.descriptionVn.message}
+									</p>
+								)}
+							</div>
+							<div className="grid gap-2">
+								<Label>Giảm (%)</Label>
+								<Input
+									type="number"
+									{...register("percentage", { valueAsNumber: true })}
+									aria-invalid={!!errors.percentage}
+								/>
+								{errors.percentage && (
+									<p className="text-xs text-destructive">
+										{errors.percentage.message}
+									</p>
+								)}
+							</div>
+							<div className="grid gap-2">
+								<Label>Ngày hết hạn</Label>
+								<Input
+									type="date"
+									{...register("expiredDate")}
+									aria-invalid={!!errors.expiredDate}
+								/>
+								{errors.expiredDate && (
+									<p className="text-xs text-destructive">
+										{errors.expiredDate.message}
+									</p>
+								)}
+							</div>
 						</div>
-						<div className="grid gap-2">
-							<Label>Mô tả</Label>
-							<Input defaultValue={discount.description} />
-						</div>
-						<div className="grid gap-2">
-							<Label>Giảm (%)</Label>
-							<Input type="number" defaultValue={discount.discountPercent} />
-						</div>
-					</div>
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setShowEditDialog(false)}>
-							Hủy
-						</Button>
-						<Button onClick={handleEdit}>Lưu thay đổi</Button>
-					</DialogFooter>
+						<DialogFooter>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setShowEditDialog(false)}
+							>
+								Hủy
+							</Button>
+							<Button type="submit" disabled={isSubmitting}>
+								{isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+							</Button>
+						</DialogFooter>
+					</form>
 				</DialogContent>
 			</Dialog>
 
@@ -140,15 +229,18 @@ function ActionCell({ row }: { row: Row<DiscountResponse> }) {
 					<AlertDialogHeader>
 						<AlertDialogTitle>Xác nhận xóa mã giảm giá</AlertDialogTitle>
 						<AlertDialogDescription>
-							Bạn có chắc chắn muốn xóa mã giảm giá{" "}
-							<strong>{discount.code}</strong>? Hành động này không thể hoàn
-							tác.
+							Bạn có chắc chắn muốn xóa mã <strong>{discount.code}</strong>?
+							Hành động này không thể hoàn tác.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
-						<AlertDialogAction variant="destructive" onClick={handleDelete}>
-							Xóa mã giảm giá
+						<AlertDialogAction
+							variant="destructive"
+							onClick={handleDelete}
+							disabled={loading}
+						>
+							{loading ? "Đang xóa..." : "Xóa mã giảm giá"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -157,74 +249,91 @@ function ActionCell({ row }: { row: Row<DiscountResponse> }) {
 	);
 }
 
-export const columns: ColumnDef<DiscountResponse>[] = [
-	{
-		accessorKey: "id",
-		header: "ID",
-		cell: ({ row }) => (
-			<span className="font-mono text-xs">{row.getValue("id")}</span>
-		),
-	},
-	{
-		accessorKey: "code",
-		header: "Mã giảm giá",
-		cell: ({ row }) => (
-			<span className="font-medium uppercase">{row.getValue("code")}</span>
-		),
-	},
-	{
-		accessorKey: "description",
-		header: "Mô tả",
-		cell: ({ row }) => (
-			<span className="text-muted-foreground line-clamp-1 max-w-[200px]">
-				{row.getValue("description")}
-			</span>
-		),
-	},
-	{
-		accessorKey: "discountPercent",
-		header: "Giảm (%)",
-		cell: ({ row }) => (
-			<span className="font-bold">{row.getValue("discountPercent")}%</span>
-		),
-	},
-	{
-		accessorKey: "minOrderAmount",
-		header: "Đơn tối thiểu",
-		cell: ({ row }) => {
-			const amount = parseFloat(row.getValue("minOrderAmount"));
-			const formatted = new Intl.NumberFormat("vi-VN", {
-				style: "currency",
-				currency: "VND",
-			}).format(amount);
-			return <span className="font-medium tabular-nums">{formatted}</span>;
+export function columns({
+	onMutated,
+}: {
+	onMutated: () => void;
+}): ColumnDef<DiscountResponse>[] {
+	return [
+		{
+			accessorKey: "pk",
+			header: "PK",
+			cell: ({ row }) => (
+				<span className="font-mono text-xs font-medium">
+					{row.getValue("pk")}
+				</span>
+			),
 		},
-	},
-	{
-		id: "dateRange",
-		header: "Thời gian",
-		cell: ({ row }) => (
-			<span className="text-muted-foreground text-sm">
-				{row.original.startDate} - {row.original.endDate}
-			</span>
-		),
-	},
-	{
-		accessorKey: "status",
-		header: "Trạng thái",
-		cell: ({ row }) => {
-			const status = row.getValue("status") as DiscountStatus;
-			const config = statusConfig[status];
-			return (
-				<Badge variant="outline" className={config.className}>
-					{config.label}
-				</Badge>
-			);
+		{
+			accessorKey: "code",
+			header: "Mã giảm giá",
+			cell: ({ row }) => (
+				<span className="font-medium uppercase">{row.getValue("code")}</span>
+			),
 		},
-	},
-	{
-		id: "actions",
-		header: () => <span className="sr-only">Hành động</span>,
-		cell: ({ row }) => <ActionCell row={row} />,
-	},
-];
+		{
+			accessorKey: "description",
+			header: "Mô tả",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground max-w-[200px] truncate inline-block align-middle">
+					{row.getValue("description")}
+				</span>
+			),
+		},
+		{
+			accessorKey: "percentage",
+			header: "Giảm (%)",
+			cell: ({ row }) => (
+				<span className="font-bold">
+					{parseFloat(row.getValue("percentage"))}%
+				</span>
+			),
+		},
+		{
+			accessorKey: "createdDate",
+			header: "Ngày tạo",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground text-sm">
+					{row.getValue("createdDate")}
+				</span>
+			),
+		},
+		{
+			accessorKey: "expiredDate",
+			header: "Ngày hết hạn",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground text-sm">
+					{row.getValue("expiredDate")}
+				</span>
+			),
+		},
+		{
+			accessorKey: "expired",
+			header: "Trạng thái",
+			cell: ({ row }) => {
+				const val = row.getValue("expired");
+				const isExpired = val === "true" || val === true;
+				return isExpired ? (
+					<Badge
+						variant="outline"
+						className="bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400"
+					>
+						Đã hết hạn
+					</Badge>
+				) : (
+					<Badge
+						variant="outline"
+						className="bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400"
+					>
+						Còn hiệu lực
+					</Badge>
+				);
+			},
+		},
+		{
+			id: "actions",
+			header: () => <span className="sr-only">Hành động</span>,
+			cell: ({ row }) => <ActionCell row={row} onMutated={onMutated} />,
+		},
+	];
+}

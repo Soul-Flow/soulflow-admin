@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
+import useAccountStore from "@/stores/accountStore";
+import useNotificationStore from "@/stores/notificationStore";
+
 export default function AdminLayout({
 	children,
 }: {
@@ -35,6 +39,20 @@ export default function AdminLayout({
 }) {
 	const pathname = usePathname();
 	const router = useRouter();
+	const { rehydrate } = useAccountStore();
+	const { connect, disconnect, notifications, unreadCount, markAllAsRead } =
+		useNotificationStore();
+
+	// Restore token from localStorage on every page load (client-side only)
+	useEffect(() => {
+		rehydrate();
+	}, [rehydrate]);
+
+	useEffect(() => {
+		connect();
+		return () => disconnect();
+	}, [connect, disconnect]);
+
 	const isActive = (href: string) =>
 		pathname === href || pathname.startsWith(`${href}/`);
 	const linkClass = (href: string) =>
@@ -45,14 +63,14 @@ export default function AdminLayout({
 		}`;
 
 	return (
-		<div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+		<div className="grid min-h-screen w-full md:grid-cols-[200px_1fr] lg:grid-cols-[240px_1fr]">
 			{/* Sidebar Desktop */}
 			<div className="hidden border-r bg-muted/40 md:block">
 				<div className="flex h-full max-h-screen flex-col gap-2">
 					<div className="flex h-14 items-center border-b px-4 lg:h-15 lg:px-6">
 						<Link href="/" className="flex items-center gap-2 font-semibold">
 							<Flower2 className="h-6 w-6 text-primary" />
-							<span className="">SoulFlow Admin</span>
+							<span className="">SouFlow Admin</span>
 						</Link>
 
 						<DropdownMenu>
@@ -63,36 +81,72 @@ export default function AdminLayout({
 									className="ml-auto h-8 w-8 relative"
 								>
 									<Bell className="h-4 w-4" />
-									<span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-600"></span>
+									{unreadCount > 0 && (
+										<span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-600 animate-pulse"></span>
+									)}
 									<span className="sr-only">Toggle notifications</span>
 								</Button>
 							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-64">
-								<DropdownMenuLabel>Thông báo</DropdownMenuLabel>
+							<DropdownMenuContent
+								align="end"
+								className="w-80 max-h-[80vh] overflow-y-auto"
+							>
+								<DropdownMenuLabel className="flex justify-between items-center">
+									Thông báo
+									{unreadCount > 0 && (
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={markAllAsRead}
+											className="h-auto p-1 text-xs"
+										>
+											Đánh dấu đã đọc
+										</Button>
+									)}
+								</DropdownMenuLabel>
 								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									className="cursor-pointer"
-									onSelect={() => router.push("/orders")}
-								>
-									Bạn có 1 đơn hàng mới (#ORD-001)
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									className="cursor-pointer"
-									onSelect={() => router.push("/products")}
-								>
-									Sản phẩm &quot;Hoa Hồng&quot; sắp hết hàng
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									className="cursor-pointer"
-									onSelect={() => router.push("/users")}
-								>
-									Người dùng mới vừa đăng ký
-								</DropdownMenuItem>
+								{notifications.length === 0 ? (
+									<div className="p-4 text-center text-sm text-muted-foreground">
+										Chưa có thông báo nào.
+									</div>
+								) : (
+									notifications.map((notif, index) => (
+										<DropdownMenuItem
+											key={index}
+											className="cursor-pointer flex flex-col items-start gap-1 p-3"
+											onSelect={() => {
+												if (
+													[
+														"ORDER_PAID",
+														"NEW_ORDER",
+														"ORDER_STATUS_CHANGED",
+													].includes(notif.type)
+												) {
+													router.push(
+														`/orders?keyword=${notif.referenceId}&action=view`,
+													);
+												} else if (notif.type === "LOW_STOCK") {
+													router.push(
+														`/products?keyword=${notif.referenceId}&action=view`,
+													);
+												}
+											}}
+										>
+											<div className="font-semibold text-sm">{notif.title}</div>
+											<div className="text-xs text-muted-foreground line-clamp-2">
+												{notif.message}
+											</div>
+											<div className="text-[10px] text-muted-foreground mt-1">
+												{new Date(notif.timestamp).toLocaleString("vi-VN")}
+											</div>
+										</DropdownMenuItem>
+									))
+								)}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>
 					<div className="flex-1">
-						<nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+						<nav className="grid items-start px-2 text-base font-medium lg:px-4">
 							<Link href="/dashboard" className={linkClass("/dashboard")}>
 								<Home className="h-4 w-4" />
 								Dashboard
@@ -200,7 +254,7 @@ export default function AdminLayout({
 							<DropdownMenuItem
 								className="cursor-pointer text-red-600 focus:text-red-600"
 								onClick={() => {
-									// biome-ignore lint/suspicious/noDocumentCookie: Chỗ này đang mock JWT tạm thời
+									localStorage.removeItem("admin_token");
 									document.cookie = "admin_token=; Max-Age=0; path=/";
 									window.location.href = "/login";
 								}}

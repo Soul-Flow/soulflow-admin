@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Eye, EyeOff, MoreHorizontal, Star, Trash } from "lucide-react";
+import { Eye, MoreHorizontal, Trash } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -14,7 +14,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -31,26 +30,30 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
-import type { CommentResponse } from "./comment.dto";
+import type { CommentResponse } from "@/interfaces/responses/comment-response.interface";
+import useCommentStore from "@/stores/commentStore";
 
-function ActionCell({ row }: { row: Row<CommentResponse> }) {
+function ActionCell({
+	row,
+	onMutated,
+}: {
+	row: Row<CommentResponse>;
+	onMutated: () => void;
+}) {
 	const comment = row.original;
+	const { deleteByPk, loading } = useCommentStore();
 	const [showViewSheet, setShowViewSheet] = useState(false);
-	const [showHideDialog, setShowHideDialog] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-	const handleToggleHidden = () => {
-		setShowHideDialog(false);
-		if (comment.hidden) {
-			toast.success("Đã hiện bình luận thành công!");
-		} else {
-			toast.success("Đã ẩn bình luận thành công!");
+	const handleDelete = async () => {
+		try {
+			await deleteByPk(Number(comment.pk));
+			toast.success("Đã xóa bình luận thành công!");
+			setShowDeleteDialog(false);
+			onMutated();
+		} catch {
+			toast.error("Xóa bình luận thất bại. Vui lòng thử lại.");
 		}
-	};
-
-	const handleDelete = () => {
-		setShowDeleteDialog(false);
-		toast.success("Đã xóa bình luận thành công!");
 	};
 
 	return (
@@ -69,33 +72,14 @@ function ActionCell({ row }: { row: Row<CommentResponse> }) {
 						className="cursor-pointer"
 						onSelect={() => setShowViewSheet(true)}
 					>
-						<Eye className="mr-2 h-4 w-4" />
-						Xem chi tiết
-					</DropdownMenuItem>
-					<DropdownMenuSeparator />
-					<DropdownMenuItem
-						className="cursor-pointer"
-						onSelect={() => setShowHideDialog(true)}
-					>
-						{comment.hidden ? (
-							<>
-								<Eye className="mr-2 h-4 w-4" />
-								Hiện bình luận
-							</>
-						) : (
-							<>
-								<EyeOff className="mr-2 h-4 w-4" />
-								Ẩn bình luận
-							</>
-						)}
+						<Eye className="mr-2 h-4 w-4" /> Xem chi tiết
 					</DropdownMenuItem>
 					<DropdownMenuSeparator />
 					<DropdownMenuItem
 						className="cursor-pointer text-red-600 focus:text-red-600"
 						onSelect={() => setShowDeleteDialog(true)}
 					>
-						<Trash className="mr-2 h-4 w-4" />
-						Xóa bình luận
+						<Trash className="mr-2 h-4 w-4" /> Xóa bình luận
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
@@ -104,58 +88,32 @@ function ActionCell({ row }: { row: Row<CommentResponse> }) {
 				<SheetContent className="overflow-y-auto">
 					<SheetHeader>
 						<SheetTitle>Chi Tiết Bình Luận</SheetTitle>
-						<SheetDescription>ID: {comment.id}</SheetDescription>
+						<SheetDescription>PK: {comment.pk}</SheetDescription>
 					</SheetHeader>
 					<div className="mt-6 space-y-4 text-sm">
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
 							<span className="font-medium text-muted-foreground">
-								Khách hàng:
+								Người dùng:
 							</span>
-							<span className="col-span-2 font-medium">
-								{comment.customerName}
-							</span>
+							<span className="col-span-2 font-medium">{comment.fullname}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
 							<span className="font-medium text-muted-foreground">
-								Sản phẩm:
+								Username:
 							</span>
-							<span className="col-span-2">{comment.productName}</span>
+							<span className="col-span-2">{comment.username}</span>
+						</div>
+						<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<span className="font-medium text-muted-foreground">
+								Sản phẩm PK:
+							</span>
+							<span className="col-span-2">{comment.productPk}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
 							<span className="font-medium text-muted-foreground">
 								Ngày đăng:
 							</span>
-							<span className="col-span-2">{comment.createdAt}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
-							<span className="font-medium text-muted-foreground">
-								Đánh giá:
-							</span>
-							<span className="col-span-2 flex items-center">
-								<RatingStars rating={comment.rating} />
-							</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
-							<span className="font-medium text-muted-foreground">
-								Trạng thái:
-							</span>
-							<span className="col-span-2">
-								{comment.hidden ? (
-									<Badge
-										variant="outline"
-										className="bg-amber-500/15 text-amber-700 border-amber-500/25 dark:text-amber-400"
-									>
-										Đã ẩn
-									</Badge>
-								) : (
-									<Badge
-										variant="outline"
-										className="bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400"
-									>
-										Hiển thị
-									</Badge>
-								)}
-							</span>
+							<span className="col-span-2">{comment.createdDate}</span>
 						</div>
 						<div className="flex flex-col gap-2 pt-2">
 							<span className="font-medium text-muted-foreground">
@@ -165,30 +123,27 @@ function ActionCell({ row }: { row: Row<CommentResponse> }) {
 								{comment.content}
 							</p>
 						</div>
+						{comment.replyResponses?.length > 0 && (
+							<div className="flex flex-col gap-2 pt-2">
+								<span className="font-medium text-muted-foreground">
+									Phản hồi ({comment.replyResponses.length}):
+								</span>
+								{comment.replyResponses.map((reply) => (
+									<div
+										key={reply.pk}
+										className="p-3 bg-muted/50 rounded-md text-sm border-l-2 border-primary/30"
+									>
+										<p className="font-medium text-xs text-muted-foreground mb-1">
+											{reply.username} · {reply.createdDate}
+										</p>
+										<p>{reply.content}</p>
+									</div>
+								))}
+							</div>
+						)}
 					</div>
 				</SheetContent>
 			</Sheet>
-
-			<AlertDialog open={showHideDialog} onOpenChange={setShowHideDialog}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							Xác nhận {comment.hidden ? "hiện" : "ẩn"} bình luận
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							Bạn có chắc chắn muốn {comment.hidden ? "hiện" : "ẩn"} bình luận
-							của khách hàng <strong>{comment.customerName}</strong> về sản phẩm{" "}
-							<strong>{comment.productName}</strong>?
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
-						<AlertDialogAction onClick={handleToggleHidden}>
-							{comment.hidden ? "Hiện bình luận" : "Ẩn bình luận"}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
 
 			<AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
 				<AlertDialogContent>
@@ -196,14 +151,18 @@ function ActionCell({ row }: { row: Row<CommentResponse> }) {
 						<AlertDialogTitle>Xác nhận xóa bình luận</AlertDialogTitle>
 						<AlertDialogDescription>
 							Bạn có chắc chắn muốn xóa bình luận của khách hàng{" "}
-							<strong>{comment.customerName}</strong>? Hành động này không thể
-							hoàn tác.
+							<strong>{comment.fullname}</strong>? Hành động này không thể hoàn
+							tác.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
-						<AlertDialogAction variant="destructive" onClick={handleDelete}>
-							Xóa bình luận
+						<AlertDialogAction
+							variant="destructive"
+							onClick={handleDelete}
+							disabled={loading}
+						>
+							{loading ? "Đang xóa..." : "Xóa bình luận"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -212,89 +171,72 @@ function ActionCell({ row }: { row: Row<CommentResponse> }) {
 	);
 }
 
-function RatingStars({ rating }: { rating: number }) {
-	return (
-		<div className="flex items-center gap-1">
-			<div className="flex">
-				{Array.from({ length: 5 }).map((_, i) => (
-					<Star
-						key={crypto.randomUUID()}
-						className={`h-4 w-4 ${
-							i < rating ? "text-amber-500" : "text-muted-foreground/30"
-						}`}
-					/>
-				))}
-			</div>
-			<span className="text-xs text-muted-foreground ml-1">{rating}/5</span>
-		</div>
-	);
-}
-
-export const columns: ColumnDef<CommentResponse>[] = [
-	{
-		accessorKey: "id",
-		header: "ID",
-		cell: ({ row }) => (
-			<span className="font-mono text-xs">{row.getValue("id")}</span>
-		),
-	},
-	{
-		accessorKey: "productName",
-		header: "Sản phẩm",
-		cell: ({ row }) => (
-			<span className="font-medium">{row.getValue("productName")}</span>
-		),
-	},
-	{
-		accessorKey: "customerName",
-		header: "Khách hàng",
-	},
-	{
-		accessorKey: "content",
-		header: "Nội dung",
-		cell: ({ row }) => (
-			<p className="text-muted-foreground line-clamp-2 max-w-62.5">
-				{row.getValue("content")}
-			</p>
-		),
-	},
-	{
-		accessorKey: "rating",
-		header: "Đánh giá",
-		cell: ({ row }) => <RatingStars rating={row.getValue("rating")} />,
-	},
-	{
-		accessorKey: "createdAt",
-		header: "Ngày đăng",
-		cell: ({ row }) => (
-			<span className="text-muted-foreground">{row.getValue("createdAt")}</span>
-		),
-	},
-	{
-		accessorKey: "hidden",
-		header: "Trạng thái",
-		cell: ({ row }) => {
-			const hidden = row.getValue("hidden") as boolean;
-			return hidden ? (
-				<Badge
-					variant="outline"
-					className="bg-amber-500/15 text-amber-700 border-amber-500/25 dark:text-amber-400"
-				>
-					Đã ẩn
-				</Badge>
-			) : (
-				<Badge
-					variant="outline"
-					className="bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400"
-				>
-					Hiển thị
-				</Badge>
-			);
+export function columns({
+	onMutated,
+}: {
+	onMutated: () => void;
+}): ColumnDef<CommentResponse>[] {
+	return [
+		{
+			accessorKey: "pk",
+			header: "PK",
+			cell: ({ row }) => (
+				<span className="font-mono text-xs">{row.getValue("pk")}</span>
+			),
 		},
-	},
-	{
-		id: "actions",
-		header: () => <span className="sr-only">Hành động</span>,
-		cell: ({ row }) => <ActionCell row={row} />,
-	},
-];
+		{
+			accessorKey: "fullname",
+			header: "Người dùng",
+			cell: ({ row }) => (
+				<span className="font-medium">{row.getValue("fullname")}</span>
+			),
+		},
+		{
+			accessorKey: "username",
+			header: "Username",
+			cell: ({ row }) => (
+				<span className="font-mono text-sm text-muted-foreground">
+					{row.getValue("username")}
+				</span>
+			),
+		},
+		{
+			accessorKey: "productPk",
+			header: "Sản phẩm PK",
+			cell: ({ row }) => (
+				<span className="font-mono text-xs">{row.getValue("productPk")}</span>
+			),
+		},
+		{
+			accessorKey: "content",
+			header: "Nội dung",
+			cell: ({ row }) => (
+				<p className="text-muted-foreground line-clamp-2 max-w-[200px]">
+					{row.getValue("content")}
+				</p>
+			),
+		},
+		{
+			accessorKey: "createdDate",
+			header: "Ngày đăng",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground">
+					{row.getValue("createdDate")}
+				</span>
+			),
+		},
+		{
+			id: "replies",
+			header: "Phản hồi",
+			cell: ({ row }) => {
+				const count = row.original.replyResponses?.length ?? 0;
+				return <span className="text-muted-foreground text-sm">{count}</span>;
+			},
+		},
+		{
+			id: "actions",
+			header: () => <span className="sr-only">Hành động</span>,
+			cell: ({ row }) => <ActionCell row={row} onMutated={onMutated} />,
+		},
+	];
+}

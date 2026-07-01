@@ -18,28 +18,27 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import useDiscountStore from "@/stores/discountStore";
 
 const discountSchema = z.object({
-	code: z
-		.string()
-		.min(3, "Mã giảm giá phải có ít nhất 3 ký tự")
-		.max(20, "Mã giảm giá tối đa 20 ký tự"),
-	description: z.string().min(1, "Mô tả là bắt buộc"),
-	discountPercent: z
+	descriptionVn: z.string().min(1, "Mô tả tiếng Việt là bắt buộc"),
+	descriptionEng: z.string().optional(),
+	percentage: z
 		.number({ message: "Phần trăm giảm giá phải là số" })
-		.min(1, "Phần trăm giảm giá tối thiểu là 1%")
-		.max(100, "Phần trăm giảm giá tối đa là 100%"),
-	minOrderAmount: z
-		.number({ message: "Giá trị đơn tối thiểu phải là số" })
-		.min(0, "Giá trị đơn tối thiểu không được âm"),
-	startDate: z.string().min(1, "Ngày bắt đầu là bắt buộc"),
-	endDate: z.string().min(1, "Ngày kết thúc là bắt buộc"),
+		.min(1, "Tối thiểu 1%")
+		.max(100, "Tối đa 100%"),
+	expiredDate: z.string().min(1, "Ngày hết hạn là bắt buộc"),
 });
 
 type DiscountFormValues = z.infer<typeof discountSchema>;
 
-export function CreateDiscountDialog() {
+interface CreateDiscountDialogProps {
+	onCreated?: () => void;
+}
+
+export function CreateDiscountDialog({ onCreated }: CreateDiscountDialogProps) {
 	const [open, setOpen] = useState(false);
+	const { save } = useDiscountStore();
 
 	const {
 		register,
@@ -49,30 +48,36 @@ export function CreateDiscountDialog() {
 	} = useForm<DiscountFormValues>({
 		resolver: zodResolver(discountSchema),
 		defaultValues: {
-			code: "",
-			description: "",
-			discountPercent: 0,
-			minOrderAmount: 0,
-			startDate: "",
-			endDate: "",
+			descriptionVn: "",
+			descriptionEng: "",
+			percentage: 0,
+			expiredDate: "",
 		},
 	});
 
-	const onSubmit = (data: DiscountFormValues) => {
-		const upperCode = data.code.toUpperCase();
-		console.log("Creating discount:", { ...data, code: upperCode });
-		toast.success("Đã tạo mã giảm giá mới thành công!", {
-			description: `Mã "${upperCode}" - Giảm ${data.discountPercent}% đã được thêm vào hệ thống.`,
-		});
-		reset();
-		setOpen(false);
+	const onSubmit = async (data: DiscountFormValues) => {
+		try {
+			await save({
+				percentage: data.percentage,
+				descriptionVn: data.descriptionVn,
+				descriptionEng: data.descriptionEng ?? data.descriptionVn,
+				expiredDate: data.expiredDate,
+				productRequests: [],
+			});
+			toast.success("Đã tạo mã giảm giá mới thành công!", {
+				description: `Giảm ${data.percentage}% đã được thêm vào hệ thống.`,
+			});
+			reset();
+			setOpen(false);
+			onCreated?.();
+		} catch {
+			toast.error("Tạo mã giảm giá thất bại. Vui lòng thử lại.");
+		}
 	};
 
 	const handleOpenChange = (isOpen: boolean) => {
 		setOpen(isOpen);
-		if (!isOpen) {
-			reset();
-		}
+		if (!isOpen) reset();
 	};
 
 	return (
@@ -92,102 +97,59 @@ export function CreateDiscountDialog() {
 				</DialogHeader>
 
 				<form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-2">
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-						<div className="grid gap-2">
-							<Label htmlFor="create-code">Mã giảm giá *</Label>
-							<Input
-								id="create-code"
-								type="text"
-								placeholder="VD: SUMMER2025"
-								{...register("code")}
-								aria-invalid={!!errors.code}
-							/>
-							{errors.code && (
-								<p className="text-xs text-destructive">
-									{errors.code.message}
-								</p>
-							)}
-						</div>
+					<div className="grid gap-2">
+						<Label htmlFor="d-descVn">Mô tả (VN) *</Label>
+						<Input
+							id="d-descVn"
+							placeholder="VD: Giảm giá mùa hè"
+							{...register("descriptionVn")}
+							aria-invalid={!!errors.descriptionVn}
+						/>
+						{errors.descriptionVn && (
+							<p className="text-xs text-destructive">
+								{errors.descriptionVn.message}
+							</p>
+						)}
+					</div>
 
-						<div className="grid gap-2">
-							<Label htmlFor="create-description">Mô tả *</Label>
-							<Input
-								id="create-description"
-								type="text"
-								placeholder="VD: Giảm giá mùa hè"
-								{...register("description")}
-								aria-invalid={!!errors.description}
-							/>
-							{errors.description && (
-								<p className="text-xs text-destructive">
-									{errors.description.message}
-								</p>
-							)}
-						</div>
+					<div className="grid gap-2">
+						<Label htmlFor="d-descEng">Mô tả (EN)</Label>
+						<Input
+							id="d-descEng"
+							placeholder="VD: Summer discount"
+							{...register("descriptionEng")}
+						/>
+					</div>
 
-						<div className="grid gap-2">
-							<Label htmlFor="create-discountPercent">Giảm giá (%) *</Label>
-							<Input
-								id="create-discountPercent"
-								type="number"
-								placeholder="VD: 15"
-								{...register("discountPercent", { valueAsNumber: true })}
-								aria-invalid={!!errors.discountPercent}
-							/>
-							{errors.discountPercent && (
-								<p className="text-xs text-destructive">
-									{errors.discountPercent.message}
-								</p>
-							)}
-						</div>
+					<div className="grid gap-2">
+						<Label htmlFor="d-percentage">Giảm giá (%) *</Label>
+						<Input
+							id="d-percentage"
+							type="number"
+							placeholder="VD: 15"
+							{...register("percentage", { valueAsNumber: true })}
+							aria-invalid={!!errors.percentage}
+						/>
+						{errors.percentage && (
+							<p className="text-xs text-destructive">
+								{errors.percentage.message}
+							</p>
+						)}
+					</div>
 
-						<div className="grid gap-2">
-							<Label htmlFor="create-minOrderAmount">
-								Đơn tối thiểu (VND) *
-							</Label>
-							<Input
-								id="create-minOrderAmount"
-								type="number"
-								placeholder="VD: 500000"
-								{...register("minOrderAmount", { valueAsNumber: true })}
-								aria-invalid={!!errors.minOrderAmount}
-							/>
-							{errors.minOrderAmount && (
-								<p className="text-xs text-destructive">
-									{errors.minOrderAmount.message}
-								</p>
-							)}
-						</div>
-
-						<div className="grid gap-2">
-							<Label htmlFor="create-startDate">Ngày bắt đầu *</Label>
-							<Input
-								id="create-startDate"
-								type="date"
-								{...register("startDate")}
-								aria-invalid={!!errors.startDate}
-							/>
-							{errors.startDate && (
-								<p className="text-xs text-destructive">
-									{errors.startDate.message}
-								</p>
-							)}
-						</div>
-
-						<div className="grid gap-2">
-							<Label htmlFor="create-endDate">Ngày kết thúc *</Label>
-							<Input
-								id="create-endDate"
-								type="date"
-								{...register("endDate")}
-								aria-invalid={!!errors.endDate}
-							/>
-							{errors.endDate && (
-								<p className="text-xs text-destructive">
-									{errors.endDate.message}
-								</p>
-							)}
-						</div>
+					<div className="grid gap-2">
+						<Label htmlFor="d-expiredDate">Ngày hết hạn *</Label>
+						<Input
+							id="d-expiredDate"
+							type="date"
+							{...register("expiredDate")}
+							aria-invalid={!!errors.expiredDate}
+						/>
+						{errors.expiredDate && (
+							<p className="text-xs text-destructive">
+								{errors.expiredDate.message}
+							</p>
+						)}
 					</div>
 
 					<DialogFooter>

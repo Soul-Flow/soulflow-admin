@@ -1,35 +1,28 @@
-# 🌸 SoulFlow - Admin Dashboard (`soulflow-admin`)
+# 🌸 SouFlow - Admin Dashboard
 
-Dự án tốt nghiệp: Website Cửa hàng hoa.
-Mã nguồn Frontend được xây dựng bằng **Next.js (App Router)** và quản lý gói bằng **Bun**.
+Dự án tốt nghiệp: Website Cửa hàng hoa (Trang Quản trị).
+Mã nguồn Frontend được xây dựng bằng **Next.js (App Router)**.
 
 ## 🚀 Dành cho thành viên nhóm (Cài đặt & Khởi chạy)
 
-Yêu cầu bắt buộc: Đã cài đặt [Bun](https://bun.sh/) trên máy. Tuyệt đối không sử dụng `npm` hay `yarn` trong dự án này để tránh xung đột file lock.
+Yêu cầu bắt buộc: Đã cài đặt **Node.js** và sử dụng **`npm`** để quản lý gói. Tuyệt đối không sử dụng `bun` hay `yarn` trong dự án này để tránh xung đột file lock.
 
-# Window
-powershell -c "irm bun.sh/install.ps1 | iex"
-
-# MacOS
-curl -fsSL https://bun.sh/install | bash
-
-# Setup
 **Bước 1: Clone dự án về máy**
-\`\`\`
-git clone https://github.com/Soul-Flow/soulflow-admin.git
-cd flowershop-fe
-\`\`\`
+```bash
+git clone https://github.com/Soul-Flow/souflow-admin.git
+cd souflow-admin-team
+```
 
 **Bước 2: Cài đặt thư viện**
-Hệ thống sẽ tự động đọc file `bun.lockb` để cài đặt đúng phiên bản:
-\`\`\`
-bun install
-\`\`\`
+Hệ thống sẽ tự động đọc file `package.json` và `package-lock.json` để cài đặt đúng phiên bản:
+```bash
+npm install
+```
 
 **Bước 3: Khởi chạy môi trường Dev**
-\`\`\`
-bun dev
-\`\`\`
+```bash
+npm run dev
+```
 Mở trình duyệt và truy cập: [http://localhost:3000](http://localhost:3000)
 
 ---
@@ -37,38 +30,30 @@ Mở trình duyệt và truy cập: [http://localhost:3000](http://localhost:300
 ## 🛠️ Stack Công nghệ & Thư viện đã cài
 
 * **Core:** Next.js 14+ (App Router, TypeScript, Tailwind CSS)
-* **Gọi API:** `axios`
+* **Package Manager:** `npm`
+* **Gọi API:** `axios` (kết nối trực tiếp với Spring Boot RESTful API)
 * **Quản lý Form:** `react-hook-form` + `zod` + `@hookform/resolvers`
 * **Quản lý State:** `zustand`
-* **Tiện ích:** `lucide-react` (Icon), `sonner` (Toast notification), `dayjs` (Format ngày tháng)
-* **Code Quality (CI/CD):** `@biomejs/biome` (Linter/Formatter thay thế ESLint/Prettier), `husky`, `lint-staged`, `commitlint` (Ràng buộc Commit chuẩn).
-* **AI Coding:** Tích hợp sẵn `AGENTS.md` để hướng dẫn AI viết code chuẩn Next.js mới nhất.
+* **Tiện ích:** `lucide-react` (Icon), `sonner` (Toast notification), `dayjs` (Format ngày tháng), `recharts` (Biểu đồ)
+* **Code Quality & CI/CD:**
+  * `@biomejs/biome` (Linter & Formatter chính).
+  * `eslint` (Cấu hình cho các rules của React Compiler và Next.js).
+  * `husky`, `lint-staged`, `commitlint` (Ràng buộc Commit chuẩn conventional commit).
 
 ---
 
-## 📝 Nhật ký cấu hình ban đầu (Dành cho Admin)
+## 🏗️ Cấu trúc thư mục (App Router)
 
-*Lưu ý: Các lệnh dưới đây chỉ dùng để tham khảo quá trình khởi tạo dự án ban đầu, không cần chạy lại.*
+* `src/app/(admin)/*`: Các trang dành cho quản trị viên (Dashboard, Orders, Products, Categories, Users, Discounts, Comments, v.v.).
+* `src/app/(auth)/*`: Các trang liên quan đến xác thực (Login).
+* `src/components/*`: Các component dùng chung (Shadcn UI components, Layout, DataTable, Navbar, Sidebar...).
+* `src/stores/*`: Các store quản lý state toàn cục bằng Zustand.
+* `src/services/*`: Chứa cấu hình gọi HTTP API bằng Axios (`axiosClient.ts`).
 
+---
 
-Xem chi tiết lệnh khởi tạo
-
-\`\`\`bash
-# 1. Install Next.js via Bun
-bunx create-next-app@latest .
-
-# 2. Settings chosen:
-- Recommended defaults: No
-- TypeScript: Yes
-- Linter: ESLint (Later migrated to Biome)
-- React Compiler: No
-- Tailwind CSS: Yes
-- `src/` directory: Yes
-- App Router: Yes
-- Import alias: No
-- AGENTS.md: Yes
-
-# 3. Add Dependencies
-bun add axios react-hook-form zod @hookform/resolvers zustand lucide-react sonner dayjs
-bun add -d @biomejs/biome husky lint-staged @commitlint/cli @commitlint/config-conventional
-\`\`\`
+## 📝 Quy tắc làm việc chung của team (Rules)
+- **Linter & Formatter:** Sử dụng `Biome`. Hãy đảm bảo đã chạy `npm run check` hoặc `npx @biomejs/biome check --write .` và không có lỗi trước khi commit.
+- **State Management:** Dùng `zustand`. Không dùng Redux hay Context API cho global state.
+- **Backend Integration:** Back-end được xây dựng bằng Java Spring Boot. Luôn sử dụng `axios` qua `axiosClient.ts` để thực hiện request. Format response JSON luôn tuân theo cấu trúc của Spring Boot.
+- **Form:** Bắt buộc sử dụng `react-hook-form` tích hợp với `zod` schema để validate dữ liệu đầu vào.

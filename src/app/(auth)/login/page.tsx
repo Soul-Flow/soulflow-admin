@@ -1,8 +1,8 @@
 "use client";
 
 import { Flower2, Loader2, LogIn } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -15,112 +15,68 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import useAccountStore from "@/stores/accountStore";
 
-/**
- * Trang đăng nhập Admin Panel — FlowerShop.
- *
- * === LUỒNG XÁC THỰC (Authentication Flow) ===
- *
- * 1. Admin nhập email + password → nhấn "Đăng nhập".
- * 2. [MOCK] Kiểm tra email/password hardcoded:
- *    - email: admin@flowershop.com
- *    - password: 123456
- * 3. Nếu đúng → Set cookie `admin_token` → Redirect đến /dashboard.
- * 4. Nếu sai → Hiển thị lỗi qua `sonner` toast.
- *
- * === KHI TÍCH HỢP BACKEND (Spring Boot) ===
- * - Gọi POST /api/v1/auth/admin/login với body { email, password }.
- * - Backend trả về JWT token trong response.
- * - Frontend lưu token vào cookie `admin_token`.
- * - Middleware sẽ kiểm tra cookie này ở mỗi request.
- * - Xem phần [REAL JWT LOGIC] bên dưới (đã comment out).
- */
 export default function LoginPage() {
+	const { login, loading } = useAccountStore();
 	const router = useRouter();
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [isLoading, setIsLoading] = useState(false);
+	const searchParams = useSearchParams();
 
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		setIsLoading(true);
+	const [username, setUsername] = useState("");
+	const [password, setPassword] = useState("");
+	const [usernameError, setUsernameError] = useState("");
+	const [passwordError, setPasswordError] = useState("");
+
+	const handleLogin = async (
+		overrideUsername?: string,
+		overridePassword?: string,
+	) => {
+		const loginUsername = String(overrideUsername ?? username).trim();
+		const loginPassword = String(overridePassword ?? password);
+
+		// reset
+		setUsernameError("");
+		setPasswordError("");
+
+		let valid = true;
+		if (!loginUsername) {
+			setUsernameError("Tên đăng nhập là bắt buộc");
+			valid = false;
+		}
+		if (!loginPassword) {
+			setPasswordError("Mật khẩu là bắt buộc");
+			valid = false;
+		}
+		if (!valid) return;
 
 		try {
-			// ─────────────────────────────────────────────────────────────────
-			// [MOCK LOGIC] — Kiểm tra thông tin đăng nhập hardcoded
-			// Xóa block này khi tích hợp backend thật
-			// ─────────────────────────────────────────────────────────────────
-			await new Promise((resolve) => setTimeout(resolve, 800)); // Giả lập API delay
-
-			if (email === "admin@flowershop.com" && password === "123456") {
-				// Đăng nhập thành công → Set cookie
-				// path=/: cookie có hiệu lực trên toàn bộ app
-				// max-age=86400: cookie hết hạn sau 24 giờ (1 ngày)
-				// biome-ignore lint/suspicious/noDocumentCookie: Chỗ này đang mock JWT tạm thời
-				document.cookie =
-					"admin_token=mock_jwt_token_123; path=/; max-age=86400";
-
-				toast.success("Đăng nhập thành công!", {
-					description: "Chào mừng bạn quay trở lại FlowerShop Admin.",
-				});
-
-				// Chuyển hướng đến Dashboard
-				router.push("/dashboard");
-				return;
-			}
-
-			// Sai thông tin → Hiển thị lỗi
-			toast.error("Đăng nhập thất bại!", {
-				description: "Email hoặc mật khẩu không chính xác. Vui lòng thử lại.",
-			});
-			// ─────────────────────────────────────────────────────────────────
-
-			// ─────────────────────────────────────────────────────────────────
-			// [REAL JWT LOGIC] — Bỏ comment block này khi tích hợp Spring Boot
-			// ─────────────────────────────────────────────────────────────────
-			//
-			// import axiosClient from "@/services/axiosClient"
-			//
-			// try {
-			//   // Bước 1: Gọi API đăng nhập
-			//   const response = await axiosClient.post("/api/v1/auth/admin/login", {
-			//     email,
-			//     password,
-			//   })
-			//
-			//   // Bước 2: Lấy JWT token từ response
-			//   // Cấu trúc response từ Spring Boot thường là:
-			//   // { data: { accessToken: "eyJhbGciOiJIUzI1NiIs...", refreshToken: "..." } }
-			//   const { accessToken } = response.data
-			//
-			//   // Bước 3: Lưu JWT token vào cookie
-			//   // - HttpOnly cookie nên được set từ backend (Set-Cookie header)
-			//   // - Nếu backend không set cookie, ta set ở client:
-			//   document.cookie = `admin_token=${accessToken}; path=/; max-age=86400; SameSite=Strict`
-			//
-			//   // Bước 4: Redirect đến Dashboard
-			//   toast.success("Đăng nhập thành công!")
-			//   router.push("/dashboard")
-			//
-			// } catch (error: any) {
-			//   // Bước 5: Xử lý lỗi từ backend
-			//   const errorMessage =
-			//     error?.response?.data?.message ||
-			//     "Đã xảy ra lỗi. Vui lòng thử lại sau."
-			//
-			//   toast.error("Đăng nhập thất bại!", {
-			//     description: errorMessage,
-			//   })
-			// }
-			//
-			// ─────────────────────────────────────────────────────────────────
+			await login({ username: loginUsername, password: loginPassword });
+			toast.success("Đăng nhập thành công!");
+			window.location.href = "/dashboard";
 		} catch {
-			toast.error("Đã xảy ra lỗi!", {
-				description: "Không thể kết nối đến server. Vui lòng thử lại sau.",
+			toast.error("Đăng nhập thất bại!", {
+				description: "Tên đăng nhập hoặc mật khẩu không chính xác.",
 			});
-		} finally {
-			setIsLoading(false);
 		}
+	};
+
+	useEffect(() => {
+		const queryUsername = searchParams.get("username")?.trim();
+		const queryPassword = searchParams.get("password")?.trim();
+
+		if (!queryUsername || !queryPassword) {
+			return;
+		}
+
+		setUsername(queryUsername);
+		setPassword(queryPassword);
+		router.replace("/login");
+		void handleLogin(queryUsername, queryPassword);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [router, searchParams]);
+
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Enter") void handleLogin();
 	};
 
 	return (
@@ -135,19 +91,23 @@ export default function LoginPage() {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<form onSubmit={handleSubmit} className="grid gap-4">
+				<div className="grid gap-4">
 					<div className="grid gap-2">
-						<Label htmlFor="login-email">Email</Label>
+						<Label htmlFor="login-username">Tên đăng nhập</Label>
 						<Input
-							id="login-email"
-							type="email"
-							placeholder="admin@flowershop.com"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							required
-							disabled={isLoading}
-							autoComplete="email"
+							id="login-username"
+							type="text"
+							placeholder="admin"
+							value={username}
+							onChange={(e) => setUsername(e.target.value)}
+							onKeyDown={handleKeyDown}
+							disabled={loading}
+							autoComplete="username"
+							aria-invalid={!!usernameError}
 						/>
+						{usernameError && (
+							<p className="text-xs text-destructive">{usernameError}</p>
+						)}
 					</div>
 
 					<div className="grid gap-2">
@@ -158,14 +118,23 @@ export default function LoginPage() {
 							placeholder="••••••"
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
-							required
-							disabled={isLoading}
+							onKeyDown={handleKeyDown}
+							disabled={loading}
 							autoComplete="current-password"
+							aria-invalid={!!passwordError}
 						/>
+						{passwordError && (
+							<p className="text-xs text-destructive">{passwordError}</p>
+						)}
 					</div>
 
-					<Button type="submit" className="w-full mt-2" disabled={isLoading}>
-						{isLoading ? (
+					<Button
+						type="button"
+						className="w-full mt-2"
+						disabled={loading}
+						onClick={() => void handleLogin()}
+					>
+						{loading ? (
 							<>
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 								Đang đăng nhập...
@@ -177,12 +146,7 @@ export default function LoginPage() {
 							</>
 						)}
 					</Button>
-
-					<p className="text-center text-xs text-muted-foreground mt-2">
-						Tài khoản demo: <strong>admin@flowershop.com</strong> /{" "}
-						<strong>123456</strong>
-					</p>
-				</form>
+				</div>
 			</CardContent>
 		</Card>
 	);

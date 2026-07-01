@@ -1,6 +1,16 @@
 "use client";
 
-import { Search } from "lucide-react";
+import {
+	ChevronLeft,
+	ChevronRight,
+	ChevronsLeft,
+	ChevronsRight,
+	Loader2,
+	Search,
+} from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,224 +20,120 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { columns, type Product } from "./columns";
+import { SortOrder } from "@/enums/sort-order.enum";
+import type { ProductResponse } from "@/interfaces/responses/product-response.interface";
+import useProductStore from "@/stores/productStore";
+import { columns } from "./columns";
 import { CreateProductDialog } from "./create-product-dialog";
 
-// Dummy data
-const data: Product[] = [
-	{
-		id: "PROD-001",
-		nameVn: "Hoa Hồng Đỏ Bó Tròn",
-		price: 350000,
-		quantity: 45,
-		available: true,
-	},
-	{
-		id: "PROD-002",
-		nameVn: "Giỏ Hoa Hướng Dương",
-		price: 420000,
-		quantity: 8,
-		available: true,
-	}, // Cảnh báo < 10
-	{
-		id: "PROD-003",
-		nameVn: "Lan Hồ Điệp Trắng",
-		price: 1200000,
-		quantity: 15,
-		available: true,
-	},
-	{
-		id: "PROD-004",
-		nameVn: "Hoa Tulip Nhập Khẩu",
-		price: 850000,
-		quantity: 0,
-		available: false,
-	},
-	{
-		id: "PROD-005",
-		nameVn: "Kệ Hoa Khai Trương",
-		price: 1500000,
-		quantity: 5,
-		available: true,
-	},
-	{
-		id: "PROD-006",
-		nameVn: "Bó Hoa Hướng Dương Mix Baby",
-		price: 300000,
-		quantity: 20,
-		available: true,
-	},
-	{
-		id: "PROD-007",
-		nameVn: "Giỏ Hoa Hồng Vàng Tươi Sáng",
-		price: 550000,
-		quantity: 12,
-		available: true,
-	},
-	{
-		id: "PROD-008",
-		nameVn: "Bó Hoa Cẩm Chướng Đỏ",
-		price: 250000,
-		quantity: 30,
-		available: true,
-	},
-	{
-		id: "PROD-009",
-		nameVn: "Giỏ Hoa Mẫu Đơn Sang Trọng",
-		price: 1500000,
-		quantity: 5,
-		available: true, // Cảnh báo < 10
-	},
-	{
-		id: "PROD-010",
-		nameVn: "Bó Hoa Cúc Họa Mi Tiết Trời Thu",
-		price: 200000,
-		quantity: 50,
-		available: true,
-	},
-	{
-		id: "PROD-011",
-		nameVn: "Giỏ Hoa Đồng Tiền Chúc Mừng",
-		price: 400000,
-		quantity: 18,
-		available: true,
-	},
-	{
-		id: "PROD-012",
-		nameVn: "Bó Hoa Tulip Hồng Ngọt Ngào",
-		price: 850000,
-		quantity: 0,
-		available: false,
-	},
-	{
-		id: "PROD-013",
-		nameVn: "Giỏ Hoa Cát Tường Đa Sắc",
-		price: 450000,
-		quantity: 25,
-		available: true,
-	},
-	{
-		id: "PROD-014",
-		nameVn: "Bó Hoa Thạch Thảo Tím Mộng Mơ",
-		price: 180000,
-		quantity: 40,
-		available: true,
-	},
-	{
-		id: "PROD-015",
-		nameVn: "Giỏ Hoa Khai Trương Tông Đỏ Vàng",
-		price: 1200000,
-		quantity: 8,
-		available: true, // Cảnh báo < 10
-	},
-	{
-		id: "PROD-016",
-		nameVn: "Bó Hoa Baby Trắng Tinh Khôi",
-		price: 350000,
-		quantity: 60,
-		available: true,
-	},
-	{
-		id: "PROD-017",
-		nameVn: "Giỏ Hoa Hướng Dương Gắn Kết",
-		price: 600000,
-		quantity: 15,
-		available: true,
-	},
-	{
-		id: "PROD-018",
-		nameVn: "Bó Hoa Baby Xanh Dương Khổng Lồ",
-		price: 400000,
-		quantity: 22,
-		available: true,
-	},
-	{
-		id: "PROD-019",
-		nameVn: "Giỏ Hoa Ly Trắng Thanh Lịch",
-		price: 750000,
-		quantity: 10,
-		available: true,
-	},
-	{
-		id: "PROD-020",
-		nameVn: "Bó Hoa Lan Hồ Điệp Cắt Cành",
-		price: 900000,
-		quantity: 4,
-		available: true, // Cảnh báo < 10
-	},
-	{
-		id: "PROD-021",
-		nameVn: "Giỏ Hoa Hồng Cam Cổ Điển",
-		price: 650000,
-		quantity: 14,
-		available: true,
-	},
-	{
-		id: "PROD-022",
-		nameVn: "Bó Hoa Cẩm Tú Cầu Xanh Mát",
-		price: 280000,
-		quantity: 35,
-		available: true,
-	},
-	{
-		id: "PROD-023",
-		nameVn: "Giỏ Hoa Hồng Dâu Ngọt Ngào",
-		price: 720000,
-		quantity: 0,
-		available: false,
-	},
-	{
-		id: "PROD-024",
-		nameVn: "Bó Hoa Cúc Tana Vintage",
-		price: 220000,
-		quantity: 45,
-		available: true,
-	},
-	{
-		id: "PROD-025",
-		nameVn: "Giỏ Hoa Kỷ Niệm Tông Đỏ",
-		price: 800000,
-		quantity: 20,
-		available: true,
-	},
-	{
-		id: "PROD-026",
-		nameVn: "Bó Hoa Sáp Thơm Lưu Hương",
-		price: 300000,
-		quantity: 100,
-		available: true,
-	},
-	{
-		id: "PROD-027",
-		nameVn: "Giỏ Hoa Sen Trắng Truyền Thống",
-		price: 500000,
-		quantity: 12,
-		available: true,
-	},
-	{
-		id: "PROD-028",
-		nameVn: "Bó Hoa Hồng Tỉ Muội",
-		price: 150000,
-		quantity: 55,
-		available: true,
-	},
-	{
-		id: "PROD-029",
-		nameVn: "Giỏ Hoa Lan Vũ Nữ Sang Trọng",
-		price: 950000,
-		quantity: 7,
-		available: true, // Cảnh báo < 10
-	},
-	{
-		id: "PROD-030",
-		nameVn: "Bó Hoa Mix Tổng Hợp Theo Mùa",
-		price: 400000,
-		quantity: 30,
-		available: true,
-	},
-];
+const PAGE_SIZE_OPTIONS = [5, 10, 20] as const;
+type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 
-export default function ProductsPage() {
+function ProductsPageContent() {
+	const { filter, loading } = useProductStore();
+	const searchParams = useSearchParams();
+
+	const [keyword, setKeyword] = useState<string>(
+		searchParams.get("keyword") || "",
+	);
+	const [searchKeyword, setSearchKeyword] = useState<string>(
+		searchParams.get("keyword") || "",
+	);
+	const [available, setAvailable] = useState<boolean>(true);
+	const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.DESC);
+	const [pageNumber, setPageNumber] = useState<number>(0);
+	const [pageSize, setPageSize] = useState<PageSize>(5);
+
+	const [data, setData] = useState<ProductResponse[]>([]);
+	const [totalPages, setTotalPages] = useState<number>(1);
+	const [totalElements, setTotalElements] = useState<number>(0);
+
+	// Initialize from URL when navigating from notification
+	useEffect(() => {
+		if (searchParams.get("action") === "view") {
+			const keywordParam = searchParams.get("keyword") || "";
+			setKeyword(keywordParam);
+			setSearchKeyword(keywordParam);
+			setAvailable(true);
+			setPageNumber(0);
+		}
+	}, [searchParams]);
+
+	const fetchProducts = useCallback(
+		async (params: {
+			keyword: string;
+			available: boolean;
+			sortOrder: SortOrder;
+			pageNumber: number;
+			pageSize: number;
+		}) => {
+			const page = await filter({
+				keyword: params.keyword.trim() || null,
+				minPrice: null,
+				maxPrice: null,
+				fromDate: null,
+				toDate: null,
+				categoryPk: null,
+				available: params.available,
+				deleted: false,
+				sortOrder: params.sortOrder,
+				pageNumber: params.pageNumber,
+				pageSize: params.pageSize,
+			});
+			setData(page?.content ?? []);
+			setTotalPages(page?.totalPages ?? 1);
+			setTotalElements(page?.totalElements ?? 0);
+		},
+		[filter],
+	);
+
+	useEffect(() => {
+		fetchProducts({
+			keyword: searchKeyword,
+			available,
+			sortOrder,
+			pageNumber,
+			pageSize,
+		});
+	}, [
+		searchKeyword,
+		available,
+		sortOrder,
+		pageNumber,
+		pageSize,
+		fetchProducts,
+	]);
+
+	const handleSearch = () => {
+		setSearchKeyword(keyword);
+		setPageNumber(0);
+	};
+
+	const handleKeywordChange = (value: string) => {
+		setKeyword(value);
+	};
+	const handleAvailableChange = (value: string) => {
+		setAvailable(value === "true");
+		setPageNumber(0);
+	};
+	const handleSortOrderChange = (value: string) => {
+		setSortOrder(value as SortOrder);
+		setPageNumber(0);
+	};
+	const handlePageSizeChange = (value: string) => {
+		setPageSize(Number(value) as PageSize);
+		setPageNumber(0);
+	};
+
+	const onMutated = () =>
+		fetchProducts({
+			keyword: searchKeyword,
+			available,
+			sortOrder,
+			pageNumber,
+			pageSize,
+		});
+
 	return (
 		<>
 			<div className="flex items-center justify-between">
@@ -239,30 +145,156 @@ export default function ProductsPage() {
 						Thêm, sửa, xóa và quản lý kho hoa của bạn.
 					</p>
 				</div>
-				<CreateProductDialog />
+				<CreateProductDialog onCreated={onMutated} />
 			</div>
 
 			<div className="flex flex-col gap-4 mt-6">
-				{/* Bộ lọc (Filters) */}
-				<div className="flex items-center gap-4">
-					<div className="relative flex-1 md:w-1/3 md:flex-none">
-						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-						<Input placeholder="Tìm theo tên sản phẩm..." className="pl-8" />
+				<div className="flex flex-wrap items-center gap-3">
+					<div className="relative flex-1 md:w-64 md:flex-none flex items-center gap-2">
+						<div className="relative flex-1">
+							{loading ? (
+								<Loader2 className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground animate-spin" />
+							) : (
+								<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+							)}
+							<Input
+								placeholder="Tìm theo tên sản phẩm..."
+								className="pl-8"
+								value={keyword}
+								onChange={(e) => handleKeywordChange(e.target.value)}
+								onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+								disabled={loading}
+							/>
+						</div>
+						<Button
+							onClick={handleSearch}
+							disabled={loading}
+							variant="secondary"
+						>
+							Tìm
+						</Button>
 					</div>
-					<Select defaultValue="all">
-						<SelectTrigger className="w-45">
+
+					<Select
+						value={String(available)}
+						onValueChange={handleAvailableChange}
+						disabled={loading}
+					>
+						<SelectTrigger className="w-48">
 							<SelectValue placeholder="Trạng thái" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="all">Tất cả trạng thái</SelectItem>
-							<SelectItem value="active">Đang kinh doanh</SelectItem>
-							<SelectItem value="inactive">Tạm ngưng</SelectItem>
+							<SelectItem value="true">Đang kinh doanh</SelectItem>
+							<SelectItem value="false">Tạm ngưng</SelectItem>
+						</SelectContent>
+					</Select>
+
+					<Select
+						value={sortOrder}
+						onValueChange={handleSortOrderChange}
+						disabled={loading}
+					>
+						<SelectTrigger className="w-44">
+							<SelectValue placeholder="Sắp xếp" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value={SortOrder.DESC}>Mới nhất trước</SelectItem>
+							<SelectItem value={SortOrder.ASC}>Cũ nhất trước</SelectItem>
+							<SelectItem value={SortOrder.PRICE_ASC}>
+								Giá thấp → cao
+							</SelectItem>
+							<SelectItem value={SortOrder.PRICE_DESC}>
+								Giá cao → thấp
+							</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
 
-				<DataTable columns={columns} data={data} />
+				<DataTable columns={columns({ onMutated })} data={data} />
+
+				<div className="flex items-center justify-between px-2">
+					<div className="flex items-center gap-2 text-sm text-muted-foreground">
+						<span>Hiển thị</span>
+						<Select
+							value={String(pageSize)}
+							onValueChange={handlePageSizeChange}
+							disabled={loading}
+						>
+							<SelectTrigger className="w-16">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{PAGE_SIZE_OPTIONS.map((s) => (
+									<SelectItem key={s} value={String(s)}>
+										{s}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<span>/ {totalElements} mục</span>
+					</div>
+
+					<div className="flex items-center gap-2">
+						<span className="w-28 text-center text-sm font-medium">
+							Trang {pageNumber + 1} / {totalPages || 1}
+						</span>
+						<div className="flex items-center gap-1">
+							<Button
+								variant="outline"
+								className="hidden h-8 w-8 p-0 lg:flex"
+								onClick={() => setPageNumber(0)}
+								disabled={loading || pageNumber === 0}
+							>
+								<span className="sr-only">Trang đầu</span>
+								<ChevronsLeft className="h-4 w-4" />
+							</Button>
+							<Button
+								variant="outline"
+								className="h-8 w-8 p-0"
+								onClick={() => setPageNumber((p) => Math.max(0, p - 1))}
+								disabled={loading || pageNumber === 0}
+							>
+								<span className="sr-only">Trang trước</span>
+								<ChevronLeft className="h-4 w-4" />
+							</Button>
+							<Button
+								variant="outline"
+								className="h-8 w-8 p-0"
+								onClick={() =>
+									setPageNumber((p) => Math.min(totalPages - 1, p + 1))
+								}
+								disabled={loading || pageNumber >= totalPages - 1}
+							>
+								<span className="sr-only">Trang sau</span>
+								<ChevronRight className="h-4 w-4" />
+							</Button>
+							<Button
+								variant="outline"
+								className="hidden h-8 w-8 p-0 lg:flex"
+								onClick={() => setPageNumber(totalPages - 1)}
+								disabled={loading || pageNumber >= totalPages - 1}
+							>
+								<span className="sr-only">Trang cuối</span>
+								<ChevronsRight className="h-4 w-4" />
+							</Button>
+						</div>
+					</div>
+				</div>
 			</div>
 		</>
+	);
+}
+
+export default function ProductsPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="p-4 text-center text-sm text-muted-foreground">
+					Đang tải...
+				</div>
+			}
+		>
+			<ProductsPageContent />
+		</Suspense>
 	);
 }

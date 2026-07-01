@@ -31,58 +31,51 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import type { AccountResponse } from "@/interfaces/responses/account-response.interface";
+import useAccountStore from "@/stores/accountStore";
 
-import type { UserResponse, UserRole, UserStatus } from "./user.dto";
-
-// ─── Badge config cho Role ──────────────────────────────────────────────────────
-
-const roleConfig: Record<UserRole, { label: string; className: string }> = {
-	admin: {
-		label: "Admin",
-		className:
-			"bg-violet-500/15 text-violet-700 border-violet-500/25 dark:text-violet-400",
-	},
-	customer: {
-		label: "Khách hàng",
-		className:
-			"bg-blue-500/15 text-blue-700 border-blue-500/25 dark:text-blue-400",
-	},
-};
-
-// ─── Badge config cho Status ────────────────────────────────────────────────────
-
-const statusConfig: Record<UserStatus, { label: string; className: string }> = {
-	active: {
-		label: "Hoạt động",
-		className:
-			"bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400",
-	},
-	locked: {
-		label: "Đã khóa",
-		className: "bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400",
-	},
-};
-
-// ─── Action component ───────────────────────────────────────────────────────────
-
-function ActionCell({ row }: { row: Row<UserResponse> }) {
-	const user = row.original;
+function ActionCell({
+	row,
+	onMutated,
+}: {
+	row: Row<AccountResponse>;
+	onMutated: () => void;
+}) {
+	const account = row.original;
+	const { save, loading } = useAccountStore();
 	const [showLockDialog, setShowLockDialog] = useState(false);
 	const [showViewSheet, setShowViewSheet] = useState(false);
 
-	const isLocked = user.status === "locked";
+	const isDisabled =
+		account.disabled === "true" ||
+		account.disabled === (true as unknown as string);
 
-	const handleToggleLock = () => {
-		setShowLockDialog(false);
-		if (isLocked) {
-			toast.success(`Đã mở khóa tài khoản "${user.fullname}" thành công!`, {
-				description: "Người dùng có thể đăng nhập lại bình thường.",
-			});
-		} else {
-			toast.success(`Đã khóa tài khoản "${user.fullname}" thành công!`, {
-				description:
-					"Người dùng sẽ không thể đăng nhập cho đến khi được mở khóa.",
-			});
+	const handleToggleDisabled = async () => {
+		try {
+			await save(
+				{
+					pk: Number(account.pk),
+					username: account.username,
+					password: null,
+					fullname: account.fullname,
+					email: account.email,
+					photo: account.photo,
+					phone: account.phone,
+					address: account.address,
+					disabled: !isDisabled,
+					roleRequest: { code: account.roleResponse?.code ?? "USER" },
+				},
+				new File([], ""),
+			);
+			setShowLockDialog(false);
+			toast.success(
+				isDisabled
+					? `Đã mở khóa tài khoản "${account.fullname}" thành công!`
+					: `Đã khóa tài khoản "${account.fullname}" thành công!`,
+			);
+			onMutated();
+		} catch {
+			toast.error("Thao tác thất bại. Vui lòng thử lại.");
 		}
 	};
 
@@ -107,10 +100,10 @@ function ActionCell({ row }: { row: Row<UserResponse> }) {
 					</DropdownMenuItem>
 					<DropdownMenuSeparator />
 					<DropdownMenuItem
-						className={`cursor-pointer ${isLocked ? "text-emerald-600 focus:text-emerald-600" : "text-red-600 focus:text-red-600"}`}
+						className={`cursor-pointer ${isDisabled ? "text-emerald-600 focus:text-emerald-600" : "text-red-600 focus:text-red-600"}`}
 						onSelect={() => setShowLockDialog(true)}
 					>
-						{isLocked ? (
+						{isDisabled ? (
 							<>
 								<Unlock className="mr-2 h-4 w-4" />
 								Mở khóa tài khoản
@@ -129,22 +122,40 @@ function ActionCell({ row }: { row: Row<UserResponse> }) {
 				<SheetContent className="overflow-y-auto">
 					<SheetHeader>
 						<SheetTitle>Chi Tiết Người Dùng</SheetTitle>
-						<SheetDescription>ID: {user.id}</SheetDescription>
+						<SheetDescription>PK: {account.pk}</SheetDescription>
 					</SheetHeader>
 					<div className="mt-6 space-y-4 text-sm">
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
 							<span className="font-medium text-muted-foreground">Họ tên:</span>
-							<span className="col-span-2 font-medium">{user.fullname}</span>
+							<span className="col-span-2 font-medium">{account.fullname}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
 							<span className="font-medium text-muted-foreground">
 								Username:
 							</span>
-							<span className="col-span-2">{user.username}</span>
+							<span className="col-span-2">{account.username}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
 							<span className="font-medium text-muted-foreground">Email:</span>
-							<span className="col-span-2">{user.email}</span>
+							<span className="col-span-2">{account.email}</span>
+						</div>
+						<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<span className="font-medium text-muted-foreground">
+								Điện thoại:
+							</span>
+							<span className="col-span-2">{account.phone}</span>
+						</div>
+						<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<span className="font-medium text-muted-foreground">
+								Địa chỉ:
+							</span>
+							<span className="col-span-2">{account.address}</span>
+						</div>
+						<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<span className="font-medium text-muted-foreground">
+								Ngày tạo:
+							</span>
+							<span className="col-span-2">{account.createdDate}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
 							<span className="font-medium text-muted-foreground">
@@ -153,9 +164,9 @@ function ActionCell({ row }: { row: Row<UserResponse> }) {
 							<span className="col-span-2">
 								<Badge
 									variant="outline"
-									className={roleConfig[user.role].className}
+									className="bg-violet-500/15 text-violet-700 border-violet-500/25 dark:text-violet-400"
 								>
-									{roleConfig[user.role].label}
+									{account.roleResponse?.nameVn ?? account.roleResponse?.code}
 								</Badge>
 							</span>
 						</div>
@@ -164,12 +175,21 @@ function ActionCell({ row }: { row: Row<UserResponse> }) {
 								Trạng thái:
 							</span>
 							<span className="col-span-2">
-								<Badge
-									variant="outline"
-									className={statusConfig[user.status].className}
-								>
-									{statusConfig[user.status].label}
-								</Badge>
+								{isDisabled ? (
+									<Badge
+										variant="outline"
+										className="bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400"
+									>
+										Đã khóa
+									</Badge>
+								) : (
+									<Badge
+										variant="outline"
+										className="bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400"
+									>
+										Hoạt động
+									</Badge>
+								)}
 							</span>
 						</div>
 					</div>
@@ -180,22 +200,21 @@ function ActionCell({ row }: { row: Row<UserResponse> }) {
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{isLocked
+							{isDisabled
 								? "Xác nhận mở khóa tài khoản"
 								: "Xác nhận khóa tài khoản"}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
-							{isLocked ? (
+							{isDisabled ? (
 								<>
 									Bạn có chắc chắn muốn mở khóa tài khoản của{" "}
-									<strong>{user.fullname}</strong>? Người dùng sẽ có thể đăng
-									nhập và sử dụng hệ thống trở lại.
+									<strong>{account.fullname}</strong>?
 								</>
 							) : (
 								<>
 									Bạn có chắc chắn muốn khóa tài khoản của{" "}
-									<strong>{user.fullname}</strong>? Người dùng sẽ không thể đăng
-									nhập cho đến khi được mở khóa.
+									<strong>{account.fullname}</strong>? Người dùng sẽ không thể
+									đăng nhập cho đến khi được mở khóa.
 								</>
 							)}
 						</AlertDialogDescription>
@@ -203,10 +222,15 @@ function ActionCell({ row }: { row: Row<UserResponse> }) {
 					<AlertDialogFooter>
 						<AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
 						<AlertDialogAction
-							variant={isLocked ? "default" : "destructive"}
-							onClick={handleToggleLock}
+							variant={isDisabled ? "default" : "destructive"}
+							onClick={handleToggleDisabled}
+							disabled={loading}
 						>
-							{isLocked ? "Mở khóa" : "Khóa tài khoản"}
+							{loading
+								? "Đang xử lý..."
+								: isDisabled
+									? "Mở khóa"
+									: "Khóa tài khoản"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -215,68 +239,95 @@ function ActionCell({ row }: { row: Row<UserResponse> }) {
 	);
 }
 
-// ─── Column definitions ─────────────────────────────────────────────────────────
-
-export const columns: ColumnDef<UserResponse>[] = [
-	{
-		accessorKey: "id",
-		header: "ID",
-		cell: ({ row }) => (
-			<span className="font-mono text-xs font-medium">
-				{row.getValue("id")}
-			</span>
-		),
-	},
-	{
-		accessorKey: "username",
-		header: "Username",
-		cell: ({ row }) => (
-			<span className="font-mono text-sm">{row.getValue("username")}</span>
-		),
-	},
-	{
-		accessorKey: "fullname",
-		header: "Họ tên",
-		cell: ({ row }) => (
-			<span className="font-medium">{row.getValue("fullname")}</span>
-		),
-	},
-	{
-		accessorKey: "email",
-		header: "Email",
-		cell: ({ row }) => (
-			<span className="text-muted-foreground">{row.getValue("email")}</span>
-		),
-	},
-	{
-		accessorKey: "role",
-		header: "Vai trò",
-		cell: ({ row }) => {
-			const role = row.getValue("role") as UserRole;
-			const config = roleConfig[role];
-			return (
-				<Badge variant="outline" className={config.className}>
-					{config.label}
-				</Badge>
-			);
+export function columns({
+	onMutated,
+}: {
+	onMutated: () => void;
+}): ColumnDef<AccountResponse>[] {
+	return [
+		{
+			accessorKey: "pk",
+			header: "PK",
+			cell: ({ row }) => (
+				<span className="font-mono text-xs font-medium">
+					{row.getValue("pk")}
+				</span>
+			),
 		},
-	},
-	{
-		accessorKey: "status",
-		header: "Trạng thái",
-		cell: ({ row }) => {
-			const status = row.getValue("status") as UserStatus;
-			const config = statusConfig[status];
-			return (
-				<Badge variant="outline" className={config.className}>
-					{config.label}
-				</Badge>
-			);
+		{
+			accessorKey: "username",
+			header: "Username",
+			cell: ({ row }) => (
+				<span className="font-mono text-sm">{row.getValue("username")}</span>
+			),
 		},
-	},
-	{
-		id: "actions",
-		header: () => <span className="sr-only">Hành động</span>,
-		cell: ({ row }) => <ActionCell row={row} />,
-	},
-];
+		{
+			accessorKey: "fullname",
+			header: "Họ tên",
+			cell: ({ row }) => (
+				<span className="font-medium max-w-[150px] truncate inline-block align-middle">
+					{row.getValue("fullname")}
+				</span>
+			),
+		},
+		{
+			accessorKey: "email",
+			header: "Email",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground max-w-[200px] truncate inline-block align-middle">
+					{row.getValue("email")}
+				</span>
+			),
+		},
+		{
+			accessorKey: "phone",
+			header: "Điện thoại",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground">{row.getValue("phone")}</span>
+			),
+		},
+		{
+			id: "role",
+			header: "Vai trò",
+			cell: ({ row }) => {
+				const account = row.original;
+				return (
+					<Badge
+						variant="outline"
+						className="bg-violet-500/15 text-violet-700 border-violet-500/25 dark:text-violet-400"
+					>
+						{account.roleResponse?.nameVn ?? account.roleResponse?.code}
+					</Badge>
+				);
+			},
+		},
+		{
+			accessorKey: "disabled",
+			header: "Trạng thái",
+			cell: ({ row }) => {
+				const disabled = row.getValue("disabled");
+				const isDisabled = disabled === "true" || disabled === true;
+				return isDisabled ? (
+					<Badge
+						variant="outline"
+						className="bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400"
+					>
+						Đã khóa
+					</Badge>
+				) : (
+					<Badge
+						variant="outline"
+						className="bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400"
+					>
+						Hoạt động
+					</Badge>
+				);
+			},
+		},
+		{
+			id: "actions",
+			header: () => <span className="sr-only">Hành động</span>,
+			cell: ({ row }) => <ActionCell row={row} onMutated={onMutated} />,
+		},
+	];
+}
