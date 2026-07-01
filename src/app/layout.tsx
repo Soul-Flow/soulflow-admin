@@ -14,8 +14,8 @@
 // });
 
 // export const metadata: Metadata = {
-// 	title: "SoulFlow Admin",
-// 	description: "Bảng điều khiển quản trị SoulFlow",
+// 	title: "SouFlow Admin",
+// 	description: "Bảng điều khiển quản trị SouFlow",
 // };
 
 // export default function RootLayout({
@@ -54,8 +54,8 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-	title: "SoulFlow Admin",
-	description: "Bảng điều khiển quản trị SoulFlow",
+	title: "SouFlow Admin",
+	description: "Bảng điều khiển quản trị SouFlow",
 };
 
 export default function RootLayout({
@@ -72,7 +72,7 @@ export default function RootLayout({
 			{/* Thêm class font-sans để mặc định mọi chữ đều dùng font Jakarta */}
 			<body className="min-h-full flex flex-col font-sans">
 				{children}
-				<Toaster richColors position="top-right" />
+				<Toaster richColors position="top-right" expand={true} />
 			</body>
 		</html>
 	);

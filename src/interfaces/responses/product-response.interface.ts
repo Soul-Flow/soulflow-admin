@@ -15,6 +15,7 @@ export interface ProductResponse {
 	quantity: string;
 	sales: string;
 	categoryPk: string;
+	customised: string;
 	discountResponses: DiscountResponse[];
 	productImageResponses: ProductImageResponse[];
 	commentResponses: CommentResponse[];

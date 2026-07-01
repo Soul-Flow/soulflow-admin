@@ -25,6 +25,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { SortOrder } from "@/enums/sort-order.enum";
 import type { CategoryResponse } from "@/interfaces/responses/category-response.interface";
 import useCategoryStore from "@/stores/categoryStore";
@@ -38,6 +39,7 @@ const productSchema = z.object({
 	price: z.number({ message: "Giá phải là số" }).min(0, "Giá không được âm"),
 	quantity: z.number({ message: "Số lượng phải là số" }).min(0),
 	categoryPk: z.number({ message: "Danh mục là bắt buộc" }).min(1),
+	customised: z.boolean(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -56,12 +58,17 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 	const [categories, setCategories] = useState<CategoryResponse[]>([]);
 	const [images, setImages] = useState<ImagePreview[]>([]);
 	const { save } = useProductStore();
-	const  {filter: filterCategory} = useCategoryStore();
+	const { filter: filterCategory } = useCategoryStore();
 
 	useEffect(() => {
 		if (open) {
-			filterCategory({ keyword: null, deleted: false, sortOrder: SortOrder.DESC, pageNumber: 0, pageSize: 100 })
-				.then((page) => setCategories(page?.content ?? []));
+			filterCategory({
+				keyword: null,
+				deleted: false,
+				sortOrder: SortOrder.DESC,
+				pageNumber: 0,
+				pageSize: 100,
+			}).then((page) => setCategories(page?.content ?? []));
 		}
 	}, [open, filterCategory]);
 
@@ -69,7 +76,7 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 	// to avoid leaking memory from createObjectURL.
 	useEffect(() => {
 		return () => {
-			images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+			images.forEach((img) => { URL.revokeObjectURL(img.previewUrl); });
 		};
 	}, [images]);
 
@@ -89,6 +96,7 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 			price: 0,
 			quantity: 0,
 			categoryPk: 0,
+			customised: false,
 		},
 	});
 
@@ -127,6 +135,7 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 					available: true,
 					quantity: data.quantity,
 					categoryPk: data.categoryPk,
+					customised: data.customised,
 				},
 				images.map((img) => img.file),
 			);
@@ -134,7 +143,7 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 				description: `Sản phẩm "${data.nameVn}" đã được thêm vào hệ thống.`,
 			});
 			reset();
-			images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+			images.forEach((img) => { URL.revokeObjectURL(img.previewUrl); });
 			setImages([]);
 			setOpen(false);
 			onCreated?.();
@@ -147,7 +156,7 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 		setOpen(isOpen);
 		if (!isOpen) {
 			reset();
-			images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+			images.forEach((img) => { URL.revokeObjectURL(img.previewUrl); });
 			setImages([]);
 		}
 	};
@@ -160,7 +169,7 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 					Thêm Sản Phẩm Mới
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-[480px] overflow-y-auto max-h-screen">
+			<DialogContent className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
 				<DialogHeader>
 					<DialogTitle>Thêm Sản Phẩm Mới</DialogTitle>
 					<DialogDescription>
@@ -170,31 +179,77 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 				<form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
 					<div className="grid gap-2">
 						<Label htmlFor="p-nameVn">Tên Sản Phẩm (VN) *</Label>
-						<Input id="p-nameVn" placeholder="VD: Hoa Hồng Đỏ" {...register("nameVn")} aria-invalid={!!errors.nameVn} />
-						{errors.nameVn && <p className="text-xs text-destructive">{errors.nameVn.message}</p>}
+						<Input
+							id="p-nameVn"
+							placeholder="VD: Hoa Hồng Đỏ"
+							{...register("nameVn")}
+							aria-invalid={!!errors.nameVn}
+						/>
+						{errors.nameVn && (
+							<p className="text-xs text-destructive">
+								{errors.nameVn.message}
+							</p>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="p-nameEng">Tên Sản Phẩm (EN) *</Label>
-						<Input id="p-nameEng" placeholder="VD: Red Rose" {...register("nameEng")} aria-invalid={!!errors.nameEng} />
-						{errors.nameEng && <p className="text-xs text-destructive">{errors.nameEng.message}</p>}
+						<Input
+							id="p-nameEng"
+							placeholder="VD: Red Rose"
+							{...register("nameEng")}
+							aria-invalid={!!errors.nameEng}
+						/>
+						{errors.nameEng && (
+							<p className="text-xs text-destructive">
+								{errors.nameEng.message}
+							</p>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="p-descVn">Mô tả (VN)</Label>
-						<Input id="p-descVn" placeholder="Mô tả sản phẩm..." {...register("descriptionVn")} />
+						<Textarea
+							id="p-descVn"
+							className="min-h-[80px]"
+							placeholder="Mô tả sản phẩm..."
+							{...register("descriptionVn")}
+						/>
 					</div>
 					<div className="grid gap-2">
-						<Label htmlFor="p-descVn">Mô tả (EN)</Label>
-						<Input id="p-descEng" placeholder="Mô tả sản phẩm..." {...register("descriptionEng")} />
+						<Label htmlFor="p-descEng">Mô tả (EN)</Label>
+						<Textarea
+							id="p-descEng"
+							className="min-h-[80px]"
+							placeholder="Mô tả sản phẩm..."
+							{...register("descriptionEng")}
+						/>
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="p-price">Giá (VNĐ) *</Label>
-						<Input id="p-price" type="number" placeholder="VD: 350000" {...register("price", { valueAsNumber: true })} aria-invalid={!!errors.price} />
-						{errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
+						<Input
+							id="p-price"
+							type="number"
+							placeholder="VD: 350000"
+							{...register("price", { valueAsNumber: true })}
+							aria-invalid={!!errors.price}
+						/>
+						{errors.price && (
+							<p className="text-xs text-destructive">{errors.price.message}</p>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="p-quantity">Số lượng (Tồn kho) *</Label>
-						<Input id="p-quantity" type="number" placeholder="VD: 50" {...register("quantity", { valueAsNumber: true })} aria-invalid={!!errors.quantity} />
-						{errors.quantity && <p className="text-xs text-destructive">{errors.quantity.message}</p>}
+						<Input
+							id="p-quantity"
+							type="number"
+							placeholder="VD: 50"
+							{...register("quantity", { valueAsNumber: true })}
+							aria-invalid={!!errors.quantity}
+						/>
+						{errors.quantity && (
+							<p className="text-xs text-destructive">
+								{errors.quantity.message}
+							</p>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label>Danh mục *</Label>
@@ -210,7 +265,31 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 								))}
 							</SelectContent>
 						</Select>
-						{errors.categoryPk && <p className="text-xs text-destructive">{errors.categoryPk.message}</p>}
+						{errors.categoryPk && (
+							<p className="text-xs text-destructive">
+								{errors.categoryPk.message}
+							</p>
+						)}
+					</div>
+					<div className="grid gap-2">
+						<Label>Thiết kế theo yêu cầu (Customised)</Label>
+						<Select
+							onValueChange={(v) => setValue("customised", v === "true")}
+							defaultValue="false"
+						>
+							<SelectTrigger aria-invalid={!!errors.customised}>
+								<SelectValue placeholder="Chọn loại" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="false">Mặc định (Không)</SelectItem>
+								<SelectItem value="true">Cho phép (Có)</SelectItem>
+							</SelectContent>
+						</Select>
+						{errors.customised && (
+							<p className="text-xs text-destructive">
+								{errors.customised.message}
+							</p>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="p-images">Hình ảnh sản phẩm</Label>
@@ -232,7 +311,10 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 						{images.length > 0 && (
 							<div className="grid grid-cols-4 gap-2 pt-1">
 								{images.map((img, index) => (
-									<div key={img.previewUrl} className="group relative aspect-square overflow-hidden rounded-md border">
+									<div
+										key={img.previewUrl}
+										className="group relative aspect-square overflow-hidden rounded-md border"
+									>
 										{/* eslint-disable-next-line @next/next/no-img-element */}
 										<img
 											src={img.previewUrl}
@@ -253,8 +335,16 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 						)}
 					</div>
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>Hủy</Button>
-						<Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Đang lưu..." : "Thêm Sản Phẩm"}</Button>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => handleOpenChange(false)}
+						>
+							Hủy
+						</Button>
+						<Button type="submit" disabled={isSubmitting}>
+							{isSubmitting ? "Đang lưu..." : "Thêm Sản Phẩm"}
+						</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>

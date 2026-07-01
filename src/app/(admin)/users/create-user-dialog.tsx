@@ -154,31 +154,75 @@ export function CreateUserDialog({ onCreated }: CreateUserDialogProps) {
 				<form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
 					<div className="grid gap-2">
 						<Label htmlFor="u-username">Tài khoản *</Label>
-						<Input id="u-username" placeholder="nguyenvana" {...register("username")} aria-invalid={!!errors.username} />
-						{errors.username && <p className="text-xs text-destructive">{errors.username.message}</p>}
+						<Input
+							id="u-username"
+							placeholder="nguyenvana"
+							{...register("username")}
+							aria-invalid={!!errors.username}
+						/>
+						{errors.username && (
+							<p className="text-xs text-destructive">
+								{errors.username.message}
+							</p>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="u-fullname">Họ tên *</Label>
-						<Input id="u-fullname" placeholder="Nguyễn Văn A" {...register("fullname")} aria-invalid={!!errors.fullname} />
-						{errors.fullname && <p className="text-xs text-destructive">{errors.fullname.message}</p>}
+						<Input
+							id="u-fullname"
+							placeholder="Nguyễn Văn A"
+							{...register("fullname")}
+							aria-invalid={!!errors.fullname}
+						/>
+						{errors.fullname && (
+							<p className="text-xs text-destructive">
+								{errors.fullname.message}
+							</p>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="u-email">Email *</Label>
-						<Input id="u-email" type="email" placeholder="a@example.com" {...register("email")} aria-invalid={!!errors.email} />
-						{errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+						<Input
+							id="u-email"
+							type="email"
+							placeholder="a@example.com"
+							{...register("email")}
+							aria-invalid={!!errors.email}
+						/>
+						{errors.email && (
+							<p className="text-xs text-destructive">{errors.email.message}</p>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="u-password">Mật khẩu *</Label>
-						<Input id="u-password" type="password" placeholder="••••••" {...register("password")} aria-invalid={!!errors.password} />
-						{errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+						<Input
+							id="u-password"
+							type="password"
+							placeholder="••••••"
+							{...register("password")}
+							aria-invalid={!!errors.password}
+						/>
+						{errors.password && (
+							<p className="text-xs text-destructive">
+								{errors.password.message}
+							</p>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="u-phone">Điện thoại</Label>
-						<Input id="u-phone" placeholder="0901234567" {...register("phone")} />
+						<Input
+							id="u-phone"
+							placeholder="0901234567"
+							{...register("phone")}
+						/>
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="u-address">Địa chỉ</Label>
-						<Input id="u-address" placeholder="123 Đường ABC, TP.HCM" {...register("address")} />
+						<Input
+							id="u-address"
+							placeholder="123 Đường ABC, TP.HCM"
+							{...register("address")}
+						/>
 					</div>
 					<div className="grid gap-2">
 						<Label htmlFor="u-photo">Ảnh đại diện</Label>
@@ -190,26 +234,37 @@ export function CreateUserDialog({ onCreated }: CreateUserDialogProps) {
 							onChange={handlePhotoChange}
 						/>
 						{photo && (
-							<p className="text-xs text-muted-foreground">Đã chọn: {photo.name}</p>
+							<p className="text-xs text-muted-foreground">
+								Đã chọn: {photo.name}
+							</p>
 						)}
-						{photoError && <p className="text-xs text-destructive">{photoError}</p>}
+						{photoError && (
+							<p className="text-xs text-destructive">{photoError}</p>
+						)}
 					</div>
 					<div className="grid gap-2">
 						<Label>Vai trò *</Label>
 						<Select
 							defaultValue={RoleCode.USER}
-							onValueChange={(v) => setValue("role", v as RoleCode)}>
+							onValueChange={(v) => setValue("role", v as RoleCode)}
+						>
 							<SelectTrigger>
 								<SelectValue placeholder="Chọn vai trò" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value={RoleCode.ADMIN}>Quản trị viên (Admin)</SelectItem>
+								<SelectItem value={RoleCode.ADMIN}>
+									Quản trị viên (Admin)
+								</SelectItem>
 								<SelectItem value={RoleCode.USER}>Người dùng (User)</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => handleOpenChange(false)}
+						>
 							Hủy
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>

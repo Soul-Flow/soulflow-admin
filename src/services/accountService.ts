@@ -1,4 +1,4 @@
-import { RoleCode } from "../enums/role-code.enum";
+import type { RoleCode } from "../enums/role-code.enum";
 import { SortOrder } from "../enums/sort-order.enum";
 import type { AccountResponse } from "../interfaces/responses/account-response.interface";
 import type { AuthResponse } from "../interfaces/responses/auth-response.interface";
@@ -10,7 +10,10 @@ import api from "../lib/api";
 
 export const accountService = {
 	login: async (request: AuthRequest): Promise<AuthResponse> => {
-		const response = await api.post<AuthResponse>("http://localhost:8080/login", request);
+		const response = await api.post<AuthResponse>(
+			"http://localhost:8080/login",
+			request,
+		);
 
 		return response.data;
 	},
@@ -74,7 +77,6 @@ export const accountService = {
 		pageNumber: number;
 		pageSize: number;
 	}): Promise<PageResponse<AccountResponse>> => {
-		
 		const response = await api.get<PageResponse<AccountResponse>>("/account", {
 			params: {
 				keyword,

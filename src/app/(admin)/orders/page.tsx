@@ -8,7 +8,8 @@ import {
 	Loader2,
 	Search,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
@@ -28,10 +29,16 @@ import { columns } from "./columns";
 const PAGE_SIZE_OPTIONS = [5, 10, 20] as const;
 type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 
-export default function OrdersPage() {
+function OrdersPageContent() {
 	const { filter, loading } = useOrderStore();
+	const searchParams = useSearchParams();
 
-	const [keyword, setKeyword] = useState<string>("");
+	const [keyword, setKeyword] = useState<string>(
+		searchParams.get("keyword") || "",
+	);
+	const [searchKeyword, setSearchKeyword] = useState<string>(
+		searchParams.get("keyword") || "",
+	);
 	const [status, setStatus] = useState<OrderStatus | "ALL">("ALL");
 	const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.DESC);
 	const [pageNumber, setPageNumber] = useState<number>(0);
@@ -40,6 +47,17 @@ export default function OrdersPage() {
 	const [data, setData] = useState<OrderResponse[]>([]);
 	const [totalPages, setTotalPages] = useState<number>(1);
 	const [totalElements, setTotalElements] = useState<number>(0);
+
+	// Initialize from URL when navigating from notification
+	useEffect(() => {
+		if (searchParams.get("action") === "view") {
+			const keywordParam = searchParams.get("keyword") || "";
+			setKeyword(keywordParam);
+			setSearchKeyword(keywordParam);
+			setStatus("ALL");
+			setPageNumber(0);
+		}
+	}, [searchParams]);
 
 	const fetchOrders = useCallback(
 		async (params: {
@@ -68,25 +86,52 @@ export default function OrdersPage() {
 	);
 
 	useEffect(() => {
-		const timer = setTimeout(
-			() => fetchOrders({ keyword, status, sortOrder, pageNumber, pageSize }),
-			keyword !== "" ? 400 : 0,
-		);
-		return () => clearTimeout(timer);
-	}, [keyword, status, sortOrder, pageNumber, pageSize, fetchOrders]);
+		fetchOrders({
+			keyword: searchKeyword,
+			status,
+			sortOrder,
+			pageNumber,
+			pageSize,
+		});
+	}, [searchKeyword, status, sortOrder, pageNumber, pageSize, fetchOrders]);
 
-	const handleKeywordChange = (value: string) => { setKeyword(value); setPageNumber(0); };
-	const handleStatusChange = (value: string) => { setStatus(value as OrderStatus | "ALL"); setPageNumber(0); };
-	const handleSortOrderChange = (value: string) => { setSortOrder(value as SortOrder); setPageNumber(0); };
-	const handlePageSizeChange = (value: string) => { setPageSize(Number(value) as PageSize); setPageNumber(0); };
+	const handleSearch = () => {
+		setSearchKeyword(keyword);
+		setPageNumber(0);
+	};
 
-	const onMutated = () => fetchOrders({ keyword, status, sortOrder, pageNumber, pageSize });
+	const handleKeywordChange = (value: string) => {
+		setKeyword(value);
+	};
+	const handleStatusChange = (value: string) => {
+		setStatus(value as OrderStatus | "ALL");
+		setPageNumber(0);
+	};
+	const handleSortOrderChange = (value: string) => {
+		setSortOrder(value as SortOrder);
+		setPageNumber(0);
+	};
+	const handlePageSizeChange = (value: string) => {
+		setPageSize(Number(value) as PageSize);
+		setPageNumber(0);
+	};
+
+	const onMutated = () =>
+		fetchOrders({
+			keyword: searchKeyword,
+			status,
+			sortOrder,
+			pageNumber,
+			pageSize,
+		});
 
 	return (
 		<>
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-2xl font-bold tracking-tight">Quản lý Đơn Hàng</h1>
+					<h1 className="text-2xl font-bold tracking-tight">
+						Quản lý Đơn Hàng
+					</h1>
 					<p className="text-muted-foreground text-sm">
 						Theo dõi và cập nhật trạng thái các đơn hàng gần đây.
 					</p>
@@ -95,22 +140,36 @@ export default function OrdersPage() {
 
 			<div className="flex flex-col gap-4 mt-6">
 				<div className="flex flex-wrap items-center gap-3">
-					<div className="relative flex-1 md:w-64 md:flex-none">
-						{loading ? (
-							<Loader2 className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground animate-spin" />
-						) : (
-							<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-						)}
-						<Input
-							placeholder="Tìm theo mã đơn hoặc khách hàng..."
-							className="pl-8"
-							value={keyword}
-							onChange={(e) => handleKeywordChange(e.target.value)}
+					<div className="relative flex-1 md:w-64 md:flex-none flex items-center gap-2">
+						<div className="relative flex-1">
+							{loading ? (
+								<Loader2 className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground animate-spin" />
+							) : (
+								<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+							)}
+							<Input
+								placeholder="Tìm theo mã đơn hoặc khách hàng..."
+								className="pl-8"
+								value={keyword}
+								onChange={(e) => handleKeywordChange(e.target.value)}
+								onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+								disabled={loading}
+							/>
+						</div>
+						<Button
+							onClick={handleSearch}
 							disabled={loading}
-						/>
+							variant="secondary"
+						>
+							Tìm
+						</Button>
 					</div>
 
-					<Select value={status} onValueChange={handleStatusChange} disabled={loading}>
+					<Select
+						value={status}
+						onValueChange={handleStatusChange}
+						disabled={loading}
+					>
 						<SelectTrigger className="w-44">
 							<SelectValue placeholder="Trạng thái" />
 						</SelectTrigger>
@@ -124,7 +183,11 @@ export default function OrdersPage() {
 						</SelectContent>
 					</Select>
 
-					<Select value={sortOrder} onValueChange={handleSortOrderChange} disabled={loading}>
+					<Select
+						value={sortOrder}
+						onValueChange={handleSortOrderChange}
+						disabled={loading}
+					>
 						<SelectTrigger className="w-44">
 							<SelectValue placeholder="Sắp xếp" />
 						</SelectTrigger>
@@ -140,13 +203,19 @@ export default function OrdersPage() {
 				<div className="flex items-center justify-between px-2">
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">
 						<span>Hiển thị</span>
-						<Select value={String(pageSize)} onValueChange={handlePageSizeChange} disabled={loading}>
+						<Select
+							value={String(pageSize)}
+							onValueChange={handlePageSizeChange}
+							disabled={loading}
+						>
 							<SelectTrigger className="w-16">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
 								{PAGE_SIZE_OPTIONS.map((s) => (
-									<SelectItem key={s} value={String(s)}>{s}</SelectItem>
+									<SelectItem key={s} value={String(s)}>
+										{s}
+									</SelectItem>
 								))}
 							</SelectContent>
 						</Select>
@@ -158,23 +227,41 @@ export default function OrdersPage() {
 							Trang {pageNumber + 1} / {totalPages || 1}
 						</span>
 						<div className="flex items-center gap-1">
-							<Button variant="outline" className="hidden h-8 w-8 p-0 lg:flex"
-								onClick={() => setPageNumber(0)} disabled={loading || pageNumber === 0}>
+							<Button
+								variant="outline"
+								className="hidden h-8 w-8 p-0 lg:flex"
+								onClick={() => setPageNumber(0)}
+								disabled={loading || pageNumber === 0}
+							>
 								<span className="sr-only">Trang đầu</span>
 								<ChevronsLeft className="h-4 w-4" />
 							</Button>
-							<Button variant="outline" className="h-8 w-8 p-0"
-								onClick={() => setPageNumber((p) => Math.max(0, p - 1))} disabled={loading || pageNumber === 0}>
+							<Button
+								variant="outline"
+								className="h-8 w-8 p-0"
+								onClick={() => setPageNumber((p) => Math.max(0, p - 1))}
+								disabled={loading || pageNumber === 0}
+							>
 								<span className="sr-only">Trang trước</span>
 								<ChevronLeft className="h-4 w-4" />
 							</Button>
-							<Button variant="outline" className="h-8 w-8 p-0"
-								onClick={() => setPageNumber((p) => Math.min(totalPages - 1, p + 1))} disabled={loading || pageNumber >= totalPages - 1}>
+							<Button
+								variant="outline"
+								className="h-8 w-8 p-0"
+								onClick={() =>
+									setPageNumber((p) => Math.min(totalPages - 1, p + 1))
+								}
+								disabled={loading || pageNumber >= totalPages - 1}
+							>
 								<span className="sr-only">Trang sau</span>
 								<ChevronRight className="h-4 w-4" />
 							</Button>
-							<Button variant="outline" className="hidden h-8 w-8 p-0 lg:flex"
-								onClick={() => setPageNumber(totalPages - 1)} disabled={loading || pageNumber >= totalPages - 1}>
+							<Button
+								variant="outline"
+								className="hidden h-8 w-8 p-0 lg:flex"
+								onClick={() => setPageNumber(totalPages - 1)}
+								disabled={loading || pageNumber >= totalPages - 1}
+							>
 								<span className="sr-only">Trang cuối</span>
 								<ChevronsRight className="h-4 w-4" />
 							</Button>
@@ -183,5 +270,19 @@ export default function OrdersPage() {
 				</div>
 			</div>
 		</>
+	);
+}
+
+export default function OrdersPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="p-4 text-center text-sm text-muted-foreground">
+					Đang tải...
+				</div>
+			}
+		>
+			<OrdersPageContent />
+		</Suspense>
 	);
 }

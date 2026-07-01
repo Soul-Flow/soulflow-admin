@@ -39,7 +39,7 @@ interface DiscountState {
 		pageSize: number;
 	}) => Promise<PageResponse<DiscountResponse> | undefined>;
 
-	clearCache:() => void;
+	clearCache: () => void;
 }
 
 const useDiscountStore = create<DiscountState>((set, get) => ({
@@ -192,7 +192,7 @@ const useDiscountStore = create<DiscountState>((set, get) => ({
 
 	clearCache: () => {
 		set({ pages: new Map() });
-	}
+	},
 }));
 
 export default useDiscountStore;

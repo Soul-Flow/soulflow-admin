@@ -33,7 +33,7 @@ interface ProductState {
 		},
 		pk: string,
 	) => Promise<ProductResponse | undefined>;
-	
+
 	filter: (params: {
 		keyword: string | null;
 		minPrice: number | null;
@@ -169,7 +169,7 @@ const useProductStore = create<ProductState>((set, get) => ({
 		try {
 			set({ loading: true });
 
-			const key = [
+			const _key = [
 				keyword,
 				minPrice,
 				maxPrice,
@@ -183,17 +183,7 @@ const useProductStore = create<ProductState>((set, get) => ({
 				pageSize,
 			].join("_");
 
-			const page = get().pages.get(key);
-
-			if (page) {
-				set((state) => {
-					const newMap = state.pages;
-					newMap.delete(key);
-					newMap.set(key, page);
-					return { pages: newMap };
-				});
-				return page;
-			}
+			// Always fetch fresh data to avoid stale UI when backend updates
 
 			const newPage = await productService.filter({
 				keyword,
@@ -209,18 +199,6 @@ const useProductStore = create<ProductState>((set, get) => ({
 				pageSize,
 			});
 
-			set((state) => {
-				const newMap = state.pages;
-				if (newMap.size >= 10) {
-					const firstKey = newMap.keys().next().value;
-					if (firstKey) {
-						newMap.delete(firstKey);
-					}
-				}
-				newMap.set(key, newPage);
-				return { pages: newMap };
-			});
-
 			return newPage;
 		} catch (error) {
 			console.log(error);
@@ -232,7 +210,7 @@ const useProductStore = create<ProductState>((set, get) => ({
 
 	clearCache: () => {
 		set({ pages: new Map() });
-	}
+	},
 }));
 
 export default useProductStore;

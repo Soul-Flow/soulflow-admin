@@ -183,7 +183,7 @@ const useReplyStore = create<ReplyState>((set, get) => ({
 
 	clearCache: () => {
 		set({ pages: new Map() });
-	}
+	},
 }));
 
 export default useReplyStore;

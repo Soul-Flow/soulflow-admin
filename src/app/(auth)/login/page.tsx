@@ -72,6 +72,7 @@ export default function LoginPage() {
 		setPassword(queryPassword);
 		router.replace("/login");
 		void handleLogin(queryUsername, queryPassword);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [router, searchParams]);
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {

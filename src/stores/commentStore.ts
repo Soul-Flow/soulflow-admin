@@ -189,7 +189,7 @@ const useCommentStore = create<CommentState>((set, get) => ({
 
 	clearCache: () => {
 		set({ pages: new Map() });
-	}
+	},
 }));
 
 export default useCommentStore;

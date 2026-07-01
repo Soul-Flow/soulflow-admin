@@ -2,13 +2,13 @@ import axios from "axios";
 
 const api = axios.create({
 	baseURL: "http://localhost:8080/admin",
-	timeout: 16000
+	timeout: 16000,
 });
 
 // Token getter registered by accountStore after it initialises.
 // This breaks the circular dependency:
 //   api.ts → accountStore.ts → accountService.ts → api.ts
-let getToken: (() => string | null | undefined) = () => null;
+let getToken: () => string | null | undefined = () => null;
 
 export function registerTokenGetter(fn: () => string | null | undefined) {
 	getToken = fn;

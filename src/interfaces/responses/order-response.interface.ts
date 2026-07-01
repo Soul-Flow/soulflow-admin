@@ -13,6 +13,10 @@ export interface OrderResponse {
 
 	total: string;
 
+	shippingFee: string;
+
+	paymentMethod: string;
+
 	createdDate: string;
 
 	expiredDate: string;

@@ -63,7 +63,7 @@ const useCartStore = create<CartState>((set, get) => ({
 		try {
 			set({ loading: true });
 			await cartService.deleteByPk(pk);
-		} catch (error) {
+		} catch (_error) {
 		} finally {
 			set({ loading: false });
 		}
@@ -178,7 +178,7 @@ const useCartStore = create<CartState>((set, get) => ({
 
 	clearCache: () => {
 		set({ pages: new Map() });
-	}
+	},
 }));
 
 export default useCartStore;

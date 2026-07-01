@@ -106,7 +106,9 @@ export function CreateDiscountDialog({ onCreated }: CreateDiscountDialogProps) {
 							aria-invalid={!!errors.descriptionVn}
 						/>
 						{errors.descriptionVn && (
-							<p className="text-xs text-destructive">{errors.descriptionVn.message}</p>
+							<p className="text-xs text-destructive">
+								{errors.descriptionVn.message}
+							</p>
 						)}
 					</div>
 
@@ -129,7 +131,9 @@ export function CreateDiscountDialog({ onCreated }: CreateDiscountDialogProps) {
 							aria-invalid={!!errors.percentage}
 						/>
 						{errors.percentage && (
-							<p className="text-xs text-destructive">{errors.percentage.message}</p>
+							<p className="text-xs text-destructive">
+								{errors.percentage.message}
+							</p>
 						)}
 					</div>
 
@@ -142,12 +146,18 @@ export function CreateDiscountDialog({ onCreated }: CreateDiscountDialogProps) {
 							aria-invalid={!!errors.expiredDate}
 						/>
 						{errors.expiredDate && (
-							<p className="text-xs text-destructive">{errors.expiredDate.message}</p>
+							<p className="text-xs text-destructive">
+								{errors.expiredDate.message}
+							</p>
 						)}
 					</div>
 
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => handleOpenChange(false)}
+						>
 							Hủy bỏ
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>

@@ -7,8 +7,8 @@ import type { AuthResponse } from "@/interfaces/responses/auth-response.interfac
 import type { PageResponse } from "@/interfaces/responses/page-response.interface";
 import type { AccountRequest } from "@/interfaces/resquests/account-request.interface";
 import type { AuthRequest } from "@/interfaces/resquests/auth-request.interface";
-import { accountService } from "../services/accountService";
 import { registerTokenGetter } from "../lib/api";
+import { accountService } from "../services/accountService";
 
 interface JwtPayload {
 	sub: string;
@@ -79,7 +79,13 @@ const useAccountStore = create<AccountState>((set, get) => ({
 				return;
 			}
 			set({
-				auth: { token, pk: "", fullname: "", email: "", photo: "" } as AuthResponse,
+				auth: {
+					token,
+					pk: "",
+					fullname: "",
+					email: "",
+					photo: "",
+				} as AuthResponse,
 				username: decoded.sub,
 				role: decoded.roleCode as RoleCode,
 				expiredDate: decoded.exp,
@@ -94,15 +100,18 @@ const useAccountStore = create<AccountState>((set, get) => ({
 			set({ loading: true });
 			const authResponse = await accountService.login(request);
 			const decoded = jwtDecode<JwtPayload>(authResponse.token);
+
+			if (decoded.roleCode !== "ADMIN") {
+				throw new Error("ACCESS_DENIED");
+			}
+
 			set({
 				username: decoded.sub,
 				role: decoded.roleCode as RoleCode,
 				expiredDate: decoded.exp,
 				auth: authResponse,
 			});
-			// Persist for rehydration on reload
 			localStorage.setItem("admin_token", authResponse.token);
-			// Cookie for proxy middleware route protection
 			document.cookie = `admin_token=${authResponse.token}; path=/; max-age=${2 * 60 * 60}; SameSite=Strict`;
 		} catch (error) {
 			console.log(error);
@@ -112,7 +121,10 @@ const useAccountStore = create<AccountState>((set, get) => ({
 		}
 	},
 
-	save: async (account: AccountRequest, file: File): Promise<AccountResponse> => {
+	save: async (
+		account: AccountRequest,
+		file: File,
+	): Promise<AccountResponse> => {
 		try {
 			set({ loading: true });
 			return await accountService.save(account, file);
@@ -121,7 +133,7 @@ const useAccountStore = create<AccountState>((set, get) => ({
 			throw error;
 		} finally {
 			set({ loading: false });
-			get().clearCache()
+			get().clearCache();
 		}
 	},
 
@@ -154,7 +166,17 @@ const useAccountStore = create<AccountState>((set, get) => ({
 	): Promise<AccountResponse | undefined> => {
 		try {
 			set({ loading: true });
-			const key = [keyword, fromDate, toDate, deleted, disabled, role, sortOrder, pageNumber, pageSize].join("_");
+			const key = [
+				keyword,
+				fromDate,
+				toDate,
+				deleted,
+				disabled,
+				role,
+				sortOrder,
+				pageNumber,
+				pageSize,
+			].join("_");
 			const page = get().pages.get(key);
 			if (page) return page.content.find((e) => e.pk === pk);
 			return accountService.findByPk(Number(pk));
@@ -179,7 +201,17 @@ const useAccountStore = create<AccountState>((set, get) => ({
 	}): Promise<PageResponse<AccountResponse> | undefined> => {
 		try {
 			set({ loading: true });
-			const key = [keyword, fromDate, toDate, deleted, disabled, role, sortOrder, pageNumber, pageSize].join("_");
+			const key = [
+				keyword,
+				fromDate,
+				toDate,
+				deleted,
+				disabled,
+				role,
+				sortOrder,
+				pageNumber,
+				pageSize,
+			].join("_");
 			const page = get().pages.get(key);
 			if (page) {
 				set((state) => {
@@ -191,7 +223,15 @@ const useAccountStore = create<AccountState>((set, get) => ({
 				return page;
 			}
 			const newPage = await accountService.filter({
-				keyword, fromDate, toDate, deleted, disabled, role, sortOrder, pageNumber, pageSize,
+				keyword,
+				fromDate,
+				toDate,
+				deleted,
+				disabled,
+				role,
+				sortOrder,
+				pageNumber,
+				pageSize,
 			});
 			set((state) => {
 				const newMap = new Map(state.pages);
@@ -213,7 +253,7 @@ const useAccountStore = create<AccountState>((set, get) => ({
 
 	clearCache: () => {
 		set({ pages: new Map() });
-	}
+	},
 }));
 
 // Break circular dependency: api → accountStore → accountService → api

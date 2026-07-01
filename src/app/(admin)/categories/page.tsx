@@ -4,7 +4,6 @@
 	useCallBack(func(), func())
 */
 
-
 import {
 	ChevronLeft,
 	ChevronRight,
@@ -34,19 +33,19 @@ const PAGE_SIZE_OPTIONS = [5, 10, 20] as const;
 type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 
 export default function CategoriesPage() {
-
 	// get store
 	const { filter, loading } = useCategoryStore();
 
 	// input state
 	const [keyword, setKeyword] = useState<string>("");
+	const [searchKeyword, setSearchKeyword] = useState<string>("");
 	const [deleted, setDeleted] = useState<boolean>(false);
 	const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.DESC);
 	const [pageNumber, setPageNumber] = useState<number>(0);
 	const [pageSize, setPageSize] = useState<PageSize>(5);
 
 	// output state
-	const [data, setData] = useState<CategoryResponse[]>([]);	
+	const [data, setData] = useState<CategoryResponse[]>([]);
 	const [totalPages, setTotalPages] = useState<number>(1);
 	const [totalElements, setTotalElements] = useState<number>(0);
 
@@ -70,22 +69,34 @@ export default function CategoriesPage() {
 			setTotalPages(page?.totalPages ?? 1);
 			setTotalElements(page?.totalElements ?? 0);
 		},
-		[filter]
+		[filter],
 	);
 
-	// delay 400 if filter input is change
-	useEffect(
-		() => {
-			const timer = setTimeout(() => fetchCategories({ keyword, deleted, sortOrder, pageNumber, pageSize }), keyword !== "" ? 400 : 0);
-			return () => clearTimeout(timer);
-		},
-		[keyword, deleted, sortOrder, pageNumber, pageSize, fetchCategories]
-	);
+	// Fetch on criteria change
+	useEffect(() => {
+		fetchCategories({
+			keyword: searchKeyword,
+			deleted,
+			sortOrder,
+			pageNumber,
+			pageSize,
+		});
+	}, [
+		searchKeyword,
+		deleted,
+		sortOrder,
+		pageNumber,
+		pageSize,
+		fetchCategories,
+	]);
 
-	// Reset to page 0 whenever filter criteria change (not pageNumber itself)
+	const handleSearch = () => {
+		setSearchKeyword(keyword);
+		setPageNumber(0);
+	};
+
 	const handleKeywordChange = (value: string) => {
 		setKeyword(value);
-		setPageNumber(0);
 	};
 	const handleDeletedChange = (value: string) => {
 		setDeleted(value === "true");
@@ -100,7 +111,14 @@ export default function CategoriesPage() {
 		setPageNumber(0);
 	};
 
-	const onMutated = () => fetchCategories({ keyword, deleted, sortOrder, pageNumber, pageSize });
+	const onMutated = () =>
+		fetchCategories({
+			keyword: searchKeyword,
+			deleted,
+			sortOrder,
+			pageNumber,
+			pageSize,
+		});
 
 	return (
 		<>
@@ -120,19 +138,29 @@ export default function CategoriesPage() {
 				{/* Bộ lọc (Filters) */}
 				<div className="flex flex-wrap items-center gap-3">
 					{/* Keyword */}
-					<div className="relative flex-1 md:w-64 md:flex-none">
-						{loading ? (
-							<Loader2 className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground animate-spin" />
-						) : (
-							<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-						)}
-						<Input
-							placeholder="Tìm theo tên danh mục..."
-							className="pl-8"
-							value={keyword}
-							onChange={(e) => handleKeywordChange(e.target.value)}
+					<div className="relative flex-1 md:w-64 md:flex-none flex items-center gap-2">
+						<div className="relative flex-1">
+							{loading ? (
+								<Loader2 className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground animate-spin" />
+							) : (
+								<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+							)}
+							<Input
+								placeholder="Tìm theo tên danh mục..."
+								className="pl-8"
+								value={keyword}
+								onChange={(e) => handleKeywordChange(e.target.value)}
+								onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+								disabled={loading}
+							/>
+						</div>
+						<Button
+							onClick={handleSearch}
 							disabled={loading}
-						/>
+							variant="secondary"
+						>
+							Tìm
+						</Button>
 					</div>
 
 					{/* Trạng thái (deleted) */}
@@ -167,7 +195,7 @@ export default function CategoriesPage() {
 				</div>
 
 				{/* table */}
-				<DataTable columns={columns({ onMutated })} data={data}/>
+				<DataTable columns={columns({ onMutated })} data={data} />
 
 				{/* pagination */}
 				<div className="flex items-center justify-between px-2">

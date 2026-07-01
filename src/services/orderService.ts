@@ -1,4 +1,4 @@
-import { OrderStatus } from "../enums/order-status.enum";
+import type { OrderStatus } from "../enums/order-status.enum";
 import { SortOrder } from "../enums/sort-order.enum";
 import type { OrderResponse } from "../interfaces/responses/order-response.interface";
 import type { PageResponse } from "../interfaces/responses/page-response.interface";
@@ -26,7 +26,7 @@ export const orderService = {
 		keyword = null,
 		fromDate = null,
 		toDate = null,
-		status = OrderStatus.PENDING,
+		status,
 		expired = false,
 		deleted = false,
 		sortOrder = SortOrder.DESC,

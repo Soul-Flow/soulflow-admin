@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
 };
 
 module.exports = {
-  allowedDevOrigins: ['shrubbery-surprise-dish.ngrok-free.dev'],
-}
+	allowedDevOrigins: ["shrubbery-surprise-dish.ngrok-free.dev"],
+};
 
 export default nextConfig;

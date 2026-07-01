@@ -1,12 +1,12 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { Edit, MoreHorizontal, Trash } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -53,13 +53,18 @@ type EditFormValues = z.infer<typeof editSchema>;
 function ActionCell({
 	row,
 	onMutated,
-}: { row: Row<DiscountResponse>; onMutated: () => void }) {
+}: {
+	row: Row<DiscountResponse>;
+	onMutated: () => void;
+}) {
 	const discount = row.original;
 	const { save, deleteByPk, loading } = useDiscountStore();
 	const [showEditDialog, setShowEditDialog] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-	const isExpired = discount.expired === "true" || discount.expired === true as unknown as string;
+	const _isExpired =
+		discount.expired === "true" ||
+		discount.expired === (true as unknown as string);
 	const percentageNum = parseFloat(discount.percentage);
 
 	const {
@@ -119,7 +124,10 @@ function ActionCell({
 				<DropdownMenuContent align="end">
 					<DropdownMenuLabel>Hành động</DropdownMenuLabel>
 					<DropdownMenuSeparator />
-					<DropdownMenuItem className="cursor-pointer" onSelect={() => setShowEditDialog(true)}>
+					<DropdownMenuItem
+						className="cursor-pointer"
+						onSelect={() => setShowEditDialog(true)}
+					>
 						<Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
 					</DropdownMenuItem>
 					<DropdownMenuSeparator />
@@ -132,38 +140,85 @@ function ActionCell({
 				</DropdownMenuContent>
 			</DropdownMenu>
 
-			<Dialog open={showEditDialog} onOpenChange={(o) => { setShowEditDialog(o); if (!o) reset(); }}>
+			<Dialog
+				open={showEditDialog}
+				onOpenChange={(o) => {
+					setShowEditDialog(o);
+					if (!o) reset();
+				}}
+			>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Cập Nhật Mã Giảm Giá</DialogTitle>
-						<DialogDescription>Chỉnh sửa thông tin mã {discount.code}.</DialogDescription>
+						<DialogDescription>
+							Chỉnh sửa thông tin mã {discount.code}.
+						</DialogDescription>
 					</DialogHeader>
 					<form onSubmit={handleSubmit(handleEdit)}>
 						<div className="grid gap-4 py-4">
 							<div className="grid gap-2">
 								<Label>Mã giảm giá</Label>
-								<Input {...register("code")} aria-invalid={!!errors.code} disabled />
-								{errors.code && <p className="text-xs text-destructive">{errors.code.message}</p>}
+								<Input
+									{...register("code")}
+									aria-invalid={!!errors.code}
+									disabled
+								/>
+								{errors.code && (
+									<p className="text-xs text-destructive">
+										{errors.code.message}
+									</p>
+								)}
 							</div>
 							<div className="grid gap-2">
 								<Label>Mô tả</Label>
-								<Input {...register("descriptionVn")} aria-invalid={!!errors.descriptionVn} />
-								{errors.descriptionVn && <p className="text-xs text-destructive">{errors.descriptionVn.message}</p>}
+								<Input
+									{...register("descriptionVn")}
+									aria-invalid={!!errors.descriptionVn}
+								/>
+								{errors.descriptionVn && (
+									<p className="text-xs text-destructive">
+										{errors.descriptionVn.message}
+									</p>
+								)}
 							</div>
 							<div className="grid gap-2">
 								<Label>Giảm (%)</Label>
-								<Input type="number" {...register("percentage", { valueAsNumber: true })} aria-invalid={!!errors.percentage} />
-								{errors.percentage && <p className="text-xs text-destructive">{errors.percentage.message}</p>}
+								<Input
+									type="number"
+									{...register("percentage", { valueAsNumber: true })}
+									aria-invalid={!!errors.percentage}
+								/>
+								{errors.percentage && (
+									<p className="text-xs text-destructive">
+										{errors.percentage.message}
+									</p>
+								)}
 							</div>
 							<div className="grid gap-2">
 								<Label>Ngày hết hạn</Label>
-								<Input type="date" {...register("expiredDate")} aria-invalid={!!errors.expiredDate} />
-								{errors.expiredDate && <p className="text-xs text-destructive">{errors.expiredDate.message}</p>}
+								<Input
+									type="date"
+									{...register("expiredDate")}
+									aria-invalid={!!errors.expiredDate}
+								/>
+								{errors.expiredDate && (
+									<p className="text-xs text-destructive">
+										{errors.expiredDate.message}
+									</p>
+								)}
 							</div>
 						</div>
 						<DialogFooter>
-							<Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>Hủy</Button>
-							<Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}</Button>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setShowEditDialog(false)}
+							>
+								Hủy
+							</Button>
+							<Button type="submit" disabled={isSubmitting}>
+								{isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+							</Button>
 						</DialogFooter>
 					</form>
 				</DialogContent>
@@ -174,12 +229,17 @@ function ActionCell({
 					<AlertDialogHeader>
 						<AlertDialogTitle>Xác nhận xóa mã giảm giá</AlertDialogTitle>
 						<AlertDialogDescription>
-							Bạn có chắc chắn muốn xóa mã <strong>{discount.code}</strong>? Hành động này không thể hoàn tác.
+							Bạn có chắc chắn muốn xóa mã <strong>{discount.code}</strong>?
+							Hành động này không thể hoàn tác.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
-						<AlertDialogAction variant="destructive" onClick={handleDelete} disabled={loading}>
+						<AlertDialogAction
+							variant="destructive"
+							onClick={handleDelete}
+							disabled={loading}
+						>
 							{loading ? "Đang xóa..." : "Xóa mã giảm giá"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
@@ -199,7 +259,9 @@ export function columns({
 			accessorKey: "pk",
 			header: "PK",
 			cell: ({ row }) => (
-				<span className="font-mono text-xs font-medium">{row.getValue("pk")}</span>
+				<span className="font-mono text-xs font-medium">
+					{row.getValue("pk")}
+				</span>
 			),
 		},
 		{
@@ -213,7 +275,7 @@ export function columns({
 			accessorKey: "description",
 			header: "Mô tả",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground line-clamp-1 max-w-[200px]">
+				<span className="text-muted-foreground max-w-[200px] truncate inline-block align-middle">
 					{row.getValue("description")}
 				</span>
 			),
@@ -222,21 +284,27 @@ export function columns({
 			accessorKey: "percentage",
 			header: "Giảm (%)",
 			cell: ({ row }) => (
-				<span className="font-bold">{parseFloat(row.getValue("percentage"))}%</span>
+				<span className="font-bold">
+					{parseFloat(row.getValue("percentage"))}%
+				</span>
 			),
 		},
 		{
 			accessorKey: "createdDate",
 			header: "Ngày tạo",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground text-sm">{row.getValue("createdDate")}</span>
+				<span className="text-muted-foreground text-sm">
+					{row.getValue("createdDate")}
+				</span>
 			),
 		},
 		{
 			accessorKey: "expiredDate",
 			header: "Ngày hết hạn",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground text-sm">{row.getValue("expiredDate")}</span>
+				<span className="text-muted-foreground text-sm">
+					{row.getValue("expiredDate")}
+				</span>
 			),
 		},
 		{
@@ -246,11 +314,17 @@ export function columns({
 				const val = row.getValue("expired");
 				const isExpired = val === "true" || val === true;
 				return isExpired ? (
-					<Badge variant="outline" className="bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400">
+					<Badge
+						variant="outline"
+						className="bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400"
+					>
 						Đã hết hạn
 					</Badge>
 				) : (
-					<Badge variant="outline" className="bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400">
+					<Badge
+						variant="outline"
+						className="bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400"
+					>
 						Còn hiệu lực
 					</Badge>
 				);

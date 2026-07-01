@@ -132,7 +132,7 @@ const useOrderStore = create<OrderState>((set, get) => ({
 		keyword = null,
 		fromDate = null,
 		toDate = null,
-		status = OrderStatus.PENDING,
+		status,
 		expired = false,
 		deleted = false,
 		sortOrder = SortOrder.DESC,
@@ -151,7 +151,7 @@ const useOrderStore = create<OrderState>((set, get) => ({
 	}): Promise<PageResponse<OrderResponse> | undefined> => {
 		try {
 			set({ loading: true });
-			const key = [
+			const _key = [
 				keyword,
 				fromDate,
 				toDate,
@@ -162,16 +162,8 @@ const useOrderStore = create<OrderState>((set, get) => ({
 				pageNumber,
 				pageSize,
 			].join("_");
-			const page = get().pages.get(key);
-			if (page) {
-				set((state) => {
-					const newPage = state.pages;
-					newPage.delete(key);
-					newPage.set(key, page);
-					return { pages: newPage };
-				});
-				return page;
-			}
+
+			// Always fetch fresh data to avoid stale UI when backend updates
 
 			const newPage = await orderService.filter({
 				keyword,
@@ -185,16 +177,6 @@ const useOrderStore = create<OrderState>((set, get) => ({
 				pageSize,
 			});
 
-			set((state) => {
-				const newMap = new Map(state.pages);
-				if (newMap.size >= 10) {
-					const firstKey = newMap.keys().next().value;
-					if (firstKey) newMap.delete(firstKey);
-				}
-				newMap.set(key, newPage);
-				return { pages: newMap };
-			});
-
 			return newPage;
 		} catch (error) {
 			console.log(error);
@@ -206,7 +188,7 @@ const useOrderStore = create<OrderState>((set, get) => ({
 
 	clearCache: () => {
 		set({ pages: new Map() });
-	}
+	},
 }));
 
 export default useOrderStore;

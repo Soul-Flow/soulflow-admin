@@ -6,7 +6,6 @@ import type { CategoryRequest } from "@/interfaces/resquests/category-request.in
 import { categoryService } from "@/services/categoryService";
 
 interface CategoryState {
-
 	pages: Map<string, PageResponse<CategoryResponse>>;
 
 	loading: boolean;
@@ -26,20 +25,18 @@ interface CategoryState {
 		pk: string,
 	) => Promise<CategoryResponse | undefined>;
 
-	filter: (
-		params: {
-			keyword: string | null;
-			deleted: boolean;
-			sortOrder: SortOrder;
-			pageNumber: number;
-			pageSize: number;
-	}) => Promise<PageResponse<CategoryResponse> | undefined>
+	filter: (params: {
+		keyword: string | null;
+		deleted: boolean;
+		sortOrder: SortOrder;
+		pageNumber: number;
+		pageSize: number;
+	}) => Promise<PageResponse<CategoryResponse> | undefined>;
 
 	clearCache: () => void;
 }
 
 const useCategoryStore = create<CategoryState>((set, get) => ({
-
 	pages: new Map<string, PageResponse<CategoryResponse>>(),
 
 	loading: false,
@@ -163,7 +160,7 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
 
 	clearCache: () => {
 		set({ pages: new Map() });
-	}
+	},
 }));
 
 export default useCategoryStore;

@@ -5,7 +5,6 @@ import type { CategoryRequest } from "../interfaces/resquests/category-request.i
 import api from "../lib/api";
 
 export const categoryService = {
-	
 	save: async (request: CategoryRequest): Promise<CategoryResponse> => {
 		const response = await api.post<CategoryResponse>("/category", request);
 

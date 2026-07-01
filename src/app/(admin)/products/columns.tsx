@@ -1,12 +1,13 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Edit, Eye, MoreHorizontal, Trash } from "lucide-react";
-import { useState } from "react";
+import { Edit, Eye, ImagePlus, MoreHorizontal, Trash, X } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -44,6 +45,7 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
 import type { ProductResponse } from "@/interfaces/responses/product-response.interface";
 import useProductStore from "@/stores/productStore";
 
@@ -56,21 +58,83 @@ const editSchema = z.object({
 	quantity: z.number({ message: "Số lượng phải là số" }).min(0),
 	available: z.boolean(),
 	categoryPk: z.number().min(1, "Danh mục là bắt buộc"),
+	customised: z.boolean(),
 });
 
 type EditFormValues = z.infer<typeof editSchema>;
 
+interface ImagePreview {
+	file: File;
+	previewUrl: string;
+}
+
 function ActionCell({
 	row,
 	onMutated,
-}: { row: Row<ProductResponse>; onMutated: () => void }) {
+}: {
+	row: Row<ProductResponse>;
+	onMutated: () => void;
+}) {
 	const product = row.original;
 	const { save, deleteByPk, loading } = useProductStore();
 	const [showViewSheet, setShowViewSheet] = useState(false);
 	const [showEditDialog, setShowEditDialog] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [images, setImages] = useState<ImagePreview[]>([]);
+	const searchParams = useSearchParams();
+	const router = useRouter();
+	const pathname = usePathname();
 
-	const isAvailable = product.available === "true" || product.available === true as unknown as string;
+	useEffect(() => {
+		if (
+			searchParams.get("action") === "view" &&
+			searchParams.get("keyword") === product.code
+		) {
+			setShowViewSheet(true);
+		}
+	}, [searchParams, product.code]);
+
+	const handleOpenChange = (open: boolean) => {
+		setShowViewSheet(open);
+		if (!open && searchParams.get("action") === "view") {
+			router.replace(pathname);
+		}
+	};
+
+	// Clean up object URLs to avoid memory leaks
+	useEffect(() => {
+		return () => {
+			images.forEach((img) => { URL.revokeObjectURL(img.previewUrl); });
+		};
+	}, [images]);
+
+	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = e.target.files;
+		if (!files || files.length === 0) return;
+
+		const newImages: ImagePreview[] = Array.from(files).map((file) => ({
+			file,
+			previewUrl: URL.createObjectURL(file),
+		}));
+
+		setImages((prev) => [...prev, ...newImages]);
+		e.target.value = "";
+	};
+
+	const handleRemoveImage = (index: number) => {
+		setImages((prev) => {
+			const target = prev[index];
+			if (target) URL.revokeObjectURL(target.previewUrl);
+			return prev.filter((_, i) => i !== index);
+		});
+	};
+
+	const isAvailable =
+		product.available === "true" ||
+		product.available === (true as unknown as string);
+	const isCustomised =
+		product.customised === "true" ||
+		product.customised === (true as unknown as string);
 	const priceNum = parseFloat(product.price);
 	const qtyNum = parseInt(product.quantity, 10);
 
@@ -96,6 +160,7 @@ function ActionCell({
 			quantity: qtyNum,
 			available: isAvailable,
 			categoryPk: Number(product.categoryPk),
+			customised: isCustomised,
 		},
 	});
 
@@ -112,10 +177,13 @@ function ActionCell({
 					available: data.available,
 					quantity: data.quantity,
 					categoryPk: data.categoryPk,
+					customised: data.customised,
 				},
-				[],
+				images.map((img) => img.file),
 			);
 			toast.success(`Đã cập nhật sản phẩm "${product.nameVn}" thành công!`);
+			images.forEach((img) => { URL.revokeObjectURL(img.previewUrl); });
+			setImages([]);
 			setShowEditDialog(false);
 			onMutated();
 		} catch {
@@ -134,6 +202,33 @@ function ActionCell({
 		}
 	};
 
+	const handleOpenEdit = () => {
+		const isAvailable = String(product.available) === "true";
+		const isCustomised = String(product.customised) === "true";
+		const priceNum =
+			typeof product.price === "string"
+				? parseFloat(product.price)
+				: product.price;
+		const qtyNum =
+			typeof product.quantity === "string"
+				? parseInt(product.quantity, 10)
+				: product.quantity;
+
+		reset({
+			nameVn: product.nameVn,
+			nameEng: product.nameEng,
+			descriptionVn: product.descriptionVn,
+			descriptionEng: product.descriptionEng,
+			price: priceNum,
+			quantity: qtyNum,
+			available: isAvailable,
+			categoryPk: Number(product.categoryPk),
+			customised: isCustomised,
+		});
+		setImages([]);
+		setShowEditDialog(true);
+	};
+
 	return (
 		<>
 			<DropdownMenu>
@@ -146,10 +241,16 @@ function ActionCell({
 				<DropdownMenuContent align="end">
 					<DropdownMenuLabel>Hành động</DropdownMenuLabel>
 					<DropdownMenuSeparator />
-					<DropdownMenuItem className="cursor-pointer" onSelect={() => setShowViewSheet(true)}>
+					<DropdownMenuItem
+						className="cursor-pointer"
+						onSelect={() => setShowViewSheet(true)}
+					>
 						<Eye className="mr-2 h-4 w-4" /> Xem chi tiết
 					</DropdownMenuItem>
-					<DropdownMenuItem className="cursor-pointer" onSelect={() => setShowEditDialog(true)}>
+					<DropdownMenuItem
+						className="cursor-pointer"
+						onSelect={handleOpenEdit}
+					>
 						<Edit className="mr-2 h-4 w-4" /> Chỉnh sửa
 					</DropdownMenuItem>
 					<DropdownMenuSeparator />
@@ -162,7 +263,7 @@ function ActionCell({
 				</DropdownMenuContent>
 			</DropdownMenu>
 
-			<Sheet open={showViewSheet} onOpenChange={setShowViewSheet}>
+			<Sheet open={showViewSheet} onOpenChange={handleOpenChange}>
 				<SheetContent className="overflow-y-auto">
 					<SheetHeader>
 						<SheetTitle>Chi Tiết Sản Phẩm</SheetTitle>
@@ -178,15 +279,29 @@ function ActionCell({
 							<span className="col-span-2 font-medium">{product.nameVn}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">Mô tả:</span>
-							<span className="col-span-2 text-muted-foreground">{product.descriptionEng}</span>
+							<span className="font-medium text-muted-foreground">
+								Mô tả (VN):
+							</span>
+							<span className="col-span-2 text-muted-foreground">
+								{product.descriptionVn}
+							</span>
+						</div>
+						<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<span className="font-medium text-muted-foreground">
+								Mô tả (EN):
+							</span>
+							<span className="col-span-2 text-muted-foreground">
+								{product.descriptionEng}
+							</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
 							<span className="font-medium text-muted-foreground">Giá:</span>
 							<span className="col-span-2 font-medium">{formattedAmount}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">Tồn kho:</span>
+							<span className="font-medium text-muted-foreground">
+								Tồn kho:
+							</span>
 							<span className="col-span-2">{product.quantity}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
@@ -194,69 +309,247 @@ function ActionCell({
 							<span className="col-span-2">{product.sales}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">Ngày tạo:</span>
+							<span className="font-medium text-muted-foreground">
+								Ngày tạo:
+							</span>
 							<span className="col-span-2">{product.createdDate}</span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
-							<span className="font-medium text-muted-foreground">Trạng thái:</span>
+							<span className="font-medium text-muted-foreground">
+								Trạng thái:
+							</span>
 							<span className="col-span-2">
 								{isAvailable ? (
-									<Badge className="bg-green-600 hover:bg-green-700">Kinh doanh</Badge>
+									<Badge className="bg-green-600 hover:bg-green-700">
+										Kinh doanh
+									</Badge>
 								) : (
 									<Badge variant="secondary">Tạm ngưng</Badge>
 								)}
 							</span>
 						</div>
+						<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<span className="font-medium text-muted-foreground">
+								Thiết kế tùy chỉnh:
+							</span>
+							<span className="col-span-2">
+								{isCustomised ? "Có" : "Không"}
+							</span>
+						</div>
+						{product.productImageResponses &&
+							product.productImageResponses.length > 0 && (
+								<div className="grid grid-cols-1 gap-2 pb-2">
+									<span className="font-medium text-muted-foreground">
+										Hình ảnh:
+									</span>
+									<div className="grid grid-cols-4 gap-2 pt-1">
+										{product.productImageResponses.map((img, index) => (
+											<div
+												key={img.pk || index}
+												className="group relative aspect-square overflow-hidden rounded-md border"
+											>
+												{/* eslint-disable-next-line @next/next/no-img-element */}
+												<img
+													src={img.url}
+													alt={`Ảnh sản phẩm ${index + 1}`}
+													className="h-full w-full object-cover"
+												/>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
 					</div>
 				</SheetContent>
 			</Sheet>
 
-			<Dialog open={showEditDialog} onOpenChange={(o) => { setShowEditDialog(o); if (!o) reset(); }}>
-				<DialogContent>
+			<Dialog
+				open={showEditDialog}
+				onOpenChange={(o) => {
+					setShowEditDialog(o);
+					if (!o) reset();
+				}}
+			>
+				<DialogContent className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
 					<DialogHeader>
 						<DialogTitle>Cập Nhật Sản Phẩm</DialogTitle>
-						<DialogDescription>Chỉnh sửa thông tin sản phẩm {product.nameVn}.</DialogDescription>
+						<DialogDescription>
+							Chỉnh sửa thông tin sản phẩm {product.nameVn}.
+						</DialogDescription>
 					</DialogHeader>
 					<form onSubmit={handleSubmit(handleUpdate)}>
 						<div className="grid gap-4 py-4">
 							<div className="grid gap-2">
 								<Label>Tên Sản Phẩm (VN)</Label>
 								<Input {...register("nameVn")} aria-invalid={!!errors.nameVn} />
-								{errors.nameVn && <p className="text-xs text-destructive">{errors.nameVn.message}</p>}
+								{errors.nameVn && (
+									<p className="text-xs text-destructive">
+										{errors.nameVn.message}
+									</p>
+								)}
 							</div>
 							<div className="grid gap-2">
 								<Label>Tên Sản Phẩm (EN)</Label>
-								<Input {...register("nameEng")} aria-invalid={!!errors.nameEng} />
-								{errors.nameEng && <p className="text-xs text-destructive">{errors.nameEng.message}</p>}
+								<Input
+									{...register("nameEng")}
+									aria-invalid={!!errors.nameEng}
+								/>
+								{errors.nameEng && (
+									<p className="text-xs text-destructive">
+										{errors.nameEng.message}
+									</p>
+								)}
 							</div>
 							<div className="grid gap-2">
-								<Label>Mô tả</Label>
-								<Input {...register("descriptionVn")} />
+								<Label>Mô tả (VN)</Label>
+								<Textarea
+									className="min-h-[80px]"
+									placeholder="Mô tả bằng tiếng Việt..."
+									{...register("descriptionVn")}
+								/>
+							</div>
+							<div className="grid gap-2">
+								<Label>Mô tả (EN)</Label>
+								<Textarea
+									className="min-h-[80px]"
+									placeholder="Mô tả bằng tiếng Anh..."
+									{...register("descriptionEng")}
+								/>
 							</div>
 							<div className="grid gap-2">
 								<Label>Giá (VNĐ)</Label>
-								<Input type="number" {...register("price", { valueAsNumber: true })} aria-invalid={!!errors.price} />
-								{errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
+								<Input
+									type="number"
+									{...register("price", { valueAsNumber: true })}
+									aria-invalid={!!errors.price}
+								/>
+								{errors.price && (
+									<p className="text-xs text-destructive">
+										{errors.price.message}
+									</p>
+								)}
 							</div>
 							<div className="grid gap-2">
 								<Label>Tồn kho</Label>
-								<Input type="number" {...register("quantity", { valueAsNumber: true })} aria-invalid={!!errors.quantity} />
+								<Input
+									type="number"
+									{...register("quantity", { valueAsNumber: true })}
+									aria-invalid={!!errors.quantity}
+								/>
 							</div>
 							<div className="grid gap-2">
 								<Label>Trạng thái</Label>
 								<select
 									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-									onChange={(e) => setValue("available", e.target.value === "true")}
+									onChange={(e) =>
+										setValue("available", e.target.value === "true")
+									}
 									defaultValue={String(isAvailable)}
 								>
 									<option value="true">Kinh doanh</option>
 									<option value="false">Tạm ngưng</option>
 								</select>
 							</div>
+							<div className="grid gap-2">
+								<Label>Thiết kế theo yêu cầu (Customised)</Label>
+								<select
+									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+									onChange={(e) =>
+										setValue("customised", e.target.value === "true")
+									}
+									defaultValue={String(isCustomised)}
+								>
+									<option value="false">Mặc định (Không)</option>
+									<option value="true">Cho phép (Có)</option>
+								</select>
+							</div>
+							<div className="grid gap-2">
+								<Label htmlFor={`p-images-${product.pk}`}>
+									Hình ảnh sản phẩm (Tải lên thêm)
+								</Label>
+								<label
+									htmlFor={`p-images-${product.pk}`}
+									className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground hover:bg-accent/50"
+								>
+									<ImagePlus className="h-4 w-4" />
+									Chọn ảnh mới để tải lên
+								</label>
+								<input
+									id={`p-images-${product.pk}`}
+									type="file"
+									accept="image/*"
+									multiple
+									className="hidden"
+									onChange={handleImageChange}
+								/>
+
+								{product.productImageResponses &&
+									product.productImageResponses.length > 0 && (
+										<div className="pt-2">
+											<span className="text-xs text-muted-foreground block mb-2">
+												Hình ảnh hiện tại:
+											</span>
+											<div className="grid grid-cols-4 gap-2">
+												{product.productImageResponses.map((img, index) => (
+													<div
+														key={`exist-${img.pk || index}`}
+														className="aspect-square overflow-hidden rounded-md border opacity-70"
+													>
+														{/* eslint-disable-next-line @next/next/no-img-element */}
+														<img
+															src={img.url}
+															alt={`Ảnh hiện tại ${index + 1}`}
+															className="h-full w-full object-cover"
+														/>
+													</div>
+												))}
+											</div>
+										</div>
+									)}
+
+								{images.length > 0 && (
+									<div className="pt-2">
+										<span className="text-xs text-muted-foreground block mb-2">
+											Ảnh mới sẽ thêm:
+										</span>
+										<div className="grid grid-cols-4 gap-2">
+											{images.map((img, index) => (
+												<div
+													key={img.previewUrl}
+													className="group relative aspect-square overflow-hidden rounded-md border"
+												>
+													{/* eslint-disable-next-line @next/next/no-img-element */}
+													<img
+														src={img.previewUrl}
+														alt={`Ảnh mới ${index + 1}`}
+														className="h-full w-full object-cover"
+													/>
+													<button
+														type="button"
+														onClick={() => handleRemoveImage(index)}
+														className="absolute right-1 top-1 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
+														aria-label="Xóa ảnh"
+													>
+														<X className="h-3 w-3" />
+													</button>
+												</div>
+											))}
+										</div>
+									</div>
+								)}
+							</div>
 						</div>
 						<DialogFooter>
-							<Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>Hủy</Button>
-							<Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}</Button>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setShowEditDialog(false)}
+							>
+								Hủy
+							</Button>
+							<Button type="submit" disabled={isSubmitting}>
+								{isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+							</Button>
 						</DialogFooter>
 					</form>
 				</DialogContent>
@@ -267,12 +560,18 @@ function ActionCell({
 					<AlertDialogHeader>
 						<AlertDialogTitle>Xác nhận xóa sản phẩm</AlertDialogTitle>
 						<AlertDialogDescription>
-							Bạn có chắc chắn muốn xóa sản phẩm <strong>{product.nameVn}</strong>? Hành động này không thể hoàn tác.
+							Bạn có chắc chắn muốn xóa sản phẩm{" "}
+							<strong>{product.nameVn}</strong>? Hành động này không thể hoàn
+							tác.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Hủy bỏ</AlertDialogCancel>
-						<AlertDialogAction variant="destructive" onClick={handleDelete} disabled={loading}>
+						<AlertDialogAction
+							variant="destructive"
+							onClick={handleDelete}
+							disabled={loading}
+						>
 							{loading ? "Đang xóa..." : "Xóa sản phẩm"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
@@ -292,7 +591,9 @@ export function columns({
 			accessorKey: "pk",
 			header: "PK",
 			cell: ({ row }) => (
-				<span className="font-mono text-xs font-medium">{row.getValue("pk")}</span>
+				<span className="font-mono text-xs font-medium">
+					{row.getValue("pk")}
+				</span>
 			),
 		},
 		{
@@ -306,28 +607,48 @@ export function columns({
 			accessorKey: "nameVn",
 			header: "Tên Sản Phẩm(VN)",
 			cell: ({ row }) => (
-				<span className="font-medium">{row.getValue("nameVn")}</span>
+				<div
+					className="max-w-[150px] truncate font-medium"
+					title={row.getValue("nameVn")}
+				>
+					{row.getValue("nameVn")}
+				</div>
 			),
 		},
 		{
 			accessorKey: "nameEng",
 			header: "Tên Sản Phẩm(EN)",
 			cell: ({ row }) => (
-				<span className="font-medium">{row.getValue("nameEng")}</span>
+				<div
+					className="max-w-[150px] truncate font-medium"
+					title={row.getValue("nameEng")}
+				>
+					{row.getValue("nameEng")}
+				</div>
 			),
 		},
 		{
 			accessorKey: "descriptionVn",
 			header: "Mô Tả(VN)",
 			cell: ({ row }) => (
-				<span className="font-medium">{row.getValue("descriptionVn")}</span>
+				<div
+					className="max-w-[150px] truncate text-muted-foreground"
+					title={row.getValue("descriptionVn")}
+				>
+					{row.getValue("descriptionVn")}
+				</div>
 			),
 		},
 		{
 			accessorKey: "descriptionEng",
 			header: "Mô Tả(EN)",
 			cell: ({ row }) => (
-				<span className="font-medium">{row.getValue("descriptionEng")}</span>
+				<div
+					className="max-w-[150px] truncate text-muted-foreground"
+					title={row.getValue("descriptionEng")}
+				>
+					{row.getValue("descriptionEng")}
+				</div>
 			),
 		},
 		{
@@ -337,7 +658,10 @@ export function columns({
 				const amount = parseFloat(row.getValue("price"));
 				return (
 					<span className="font-medium tabular-nums">
-						{new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount)}
+						{new Intl.NumberFormat("vi-VN", {
+							style: "currency",
+							currency: "VND",
+						}).format(amount)}
 					</span>
 				);
 			},
@@ -348,7 +672,9 @@ export function columns({
 			cell: ({ row }) => {
 				const qty = parseInt(row.getValue("quantity"), 10);
 				return (
-					<span className={`font-medium ${qty < 10 ? "text-destructive" : ""}`}>{qty}</span>
+					<span className={`font-medium ${qty < 10 ? "text-destructive" : ""}`}>
+						{qty}
+					</span>
 				);
 			},
 		},

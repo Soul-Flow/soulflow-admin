@@ -5,9 +5,7 @@ import type { CartRequest } from "../interfaces/resquests/cart-resquest.interfac
 import api from "../lib/api";
 
 export const cartService = {
-
 	save: async (request: CartRequest): Promise<CartResponse> => {
-
 		const response = await api.post<CartResponse>("/cart", request);
 
 		return response.data;

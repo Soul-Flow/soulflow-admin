@@ -8,4 +8,5 @@ export interface ProductRequest {
 	available: boolean;
 	quantity: number;
 	categoryPk: number;
+	customised: boolean;
 }

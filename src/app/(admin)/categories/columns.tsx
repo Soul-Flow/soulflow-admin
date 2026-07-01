@@ -1,12 +1,12 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { Edit, MoreHorizontal, Trash } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -60,7 +60,10 @@ type EditFormValues = z.infer<typeof editSchema>;
 function ActionCell({
 	row,
 	onMutated,
-}: { row: Row<CategoryResponse>; onMutated: () => void }) {
+}: {
+	row: Row<CategoryResponse>;
+	onMutated: () => void;
+}) {
 	const category = row.original;
 	const { save, deleteByPk } = useCategoryStore();
 	const [showEditDialog, setShowEditDialog] = useState(false);
@@ -90,7 +93,9 @@ function ActionCell({
 				descriptionVn: data.descriptionVn ?? "",
 				descriptionEng: data.descriptionEng ?? "",
 			});
-			toast.success(`Đã cập nhật danh mục "${category.nameVn}" - "${category.nameEng}" thành công!`);
+			toast.success(
+				`Đã cập nhật danh mục "${category.nameVn}" - "${category.nameEng}" thành công!`,
+			);
 			setShowEditDialog(false);
 			onMutated();
 		} catch {
@@ -101,9 +106,12 @@ function ActionCell({
 	const handleDelete = async () => {
 		try {
 			await deleteByPk(Number(category.pk));
-			toast.success(`Đã xóa danh mục "${category.nameVn}" - "${category.nameEng}" thành công!`, {
-				description: "Danh mục đã được xóa khỏi hệ thống.",
-			});
+			toast.success(
+				`Đã xóa danh mục "${category.nameVn}" - "${category.nameEng}" thành công!`,
+				{
+					description: "Danh mục đã được xóa khỏi hệ thống.",
+				},
+			);
 			setShowDeleteDialog(false);
 			onMutated();
 		} catch {
@@ -152,17 +160,15 @@ function ActionCell({
 					<DialogHeader>
 						<DialogTitle>Cập Nhật Danh Mục</DialogTitle>
 						<DialogDescription>
-							Chỉnh sửa thông tin danh mục ${category.nameVn} - ${category.nameEng}.
+							Chỉnh sửa thông tin danh mục ${category.nameVn} - $
+							{category.nameEng}.
 						</DialogDescription>
 					</DialogHeader>
 					<form onSubmit={handleSubmit(handleEdit)}>
 						<div className="grid gap-4 py-4">
 							<div className="grid gap-2">
 								<Label>Tên Danh Mục (VN)</Label>
-								<Input
-									{...register("nameVn")}
-									aria-invalid={!!errors.nameVn}
-								/>
+								<Input {...register("nameVn")} aria-invalid={!!errors.nameVn} />
 								{errors.nameVn && (
 									<p className="text-xs text-destructive">
 										{errors.nameVn.message}
@@ -212,8 +218,11 @@ function ActionCell({
 						<AlertDialogTitle>Xác nhận xóa danh mục</AlertDialogTitle>
 						<AlertDialogDescription>
 							Bạn có chắc chắn muốn xóa danh mục{" "}
-							<strong>${category.nameVn} - ${category.nameEng}</strong>? Tất cả sản phẩm thuộc danh mục
-							này sẽ bị ảnh hưởng. Hành động này không thể hoàn tác.
+							<strong>
+								${category.nameVn} - ${category.nameEng}
+							</strong>
+							? Tất cả sản phẩm thuộc danh mục này sẽ bị ảnh hưởng. Hành động
+							này không thể hoàn tác.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -268,7 +277,7 @@ export function columns({
 			accessorKey: "descriptionVn",
 			header: "Mô tả(VN)",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground line-clamp-1 max-w-75">
+				<span className="text-muted-foreground max-w-[200px] truncate inline-block align-middle">
 					{row.getValue("descriptionVn")}
 				</span>
 			),
@@ -277,7 +286,7 @@ export function columns({
 			accessorKey: "descriptionEng",
 			header: "Mô tả (EN)",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground line-clamp-1 max-w-75">
+				<span className="text-muted-foreground max-w-[200px] truncate inline-block align-middle">
 					{row.getValue("descriptionEng")}
 				</span>
 			),
