@@ -22,13 +22,13 @@ import {
 import { SortOrder } from "@/enums/sort-order.enum";
 import type { CommentResponse } from "@/interfaces/responses/comment-response.interface";
 import useCommentStore from "@/stores/commentStore";
-import { columns } from "./columns";
+import { columns, CommentExpandedRow } from "./columns";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20] as const;
 type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 
 export default function CommentsPage() {
-	const { filter, loading } = useCommentStore();
+	const { filter, loading, clearCache } = useCommentStore();
 
 	const [keyword, setKeyword] = useState<string>("");
 	const [searchKeyword, setSearchKeyword] = useState<string>("");
@@ -96,7 +96,8 @@ export default function CommentsPage() {
 		setPageNumber(0);
 	};
 
-	const onMutated = () =>
+	const onMutated = () => {
+		clearCache();
 		fetchComments({
 			keyword: searchKeyword,
 			deleted,
@@ -104,6 +105,7 @@ export default function CommentsPage() {
 			pageNumber,
 			pageSize,
 		});
+	};
 
 	return (
 		<>
@@ -174,7 +176,14 @@ export default function CommentsPage() {
 					</Select>
 				</div>
 
-				<DataTable columns={columns({ onMutated })} data={data} />
+				<DataTable 
+					columns={columns({ onMutated })} 
+					data={data} 
+					getRowCanExpand={() => true}
+					renderSubComponent={({ row }) => (
+						<CommentExpandedRow row={row} onMutated={onMutated} />
+					)}
+				/>
 
 				<div className="flex items-center justify-between px-2">
 					<div className="flex items-center gap-2 text-sm text-muted-foreground">

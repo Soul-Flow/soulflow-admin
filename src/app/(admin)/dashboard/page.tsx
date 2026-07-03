@@ -21,6 +21,7 @@ import {
 	YAxis,
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -46,6 +47,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useDashboardStore from "@/stores/dashboardStore";
+import { type DashboardFilter } from "@/services/dashboardService";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -66,20 +68,26 @@ const CATEGORY_COLORS = [
 
 const barChartConfig: ChartConfig = {
 	revenue: {
-		label: "Doanh thu",
-		color: "oklch(0.65 0.19 160)",
+		label: "Doanh thu ",
+		color: " oklch(0.65 0.19 160)",
 	},
 };
 
 // ─── Page Component ─────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-	const [filter, setFilter] = useState<"today" | "week" | "month">("month");
+	const [filter, setFilter] = useState<DashboardFilter>("month");
+	const [startDate, setStartDate] = useState("");
+	const [endDate, setEndDate] = useState("");
+
 	const { data, loading, error, fetchDashboard } = useDashboardStore();
 
 	useEffect(() => {
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		void fetchDashboard(filter);
+		// Only fetch automatically if not custom
+		if (filter !== "custom") {
+			// eslint-disable-next-line react-hooks/exhaustive-deps
+			void fetchDashboard({ filter });
+		}
 	}, [filter]);
 
 	if (loading) {
@@ -115,7 +123,11 @@ export default function DashboardPage() {
 	const getFilterText = () => {
 		if (filter === "today") return "so với hôm qua";
 		if (filter === "week") return "so với tuần trước";
-		return "so với tháng trước";
+		if (filter === "month") return "so với tháng trước";
+		if (filter === "year") return "so với năm trước";
+		if (filter === "all") return "toàn thời gian";
+		if (filter === "custom") return "trong khoảng thời gian này";
+		return "";
 	};
 
 	// Prepare pie chart config dynamically based on received categories
@@ -165,24 +177,56 @@ export default function DashboardPage() {
 	return (
 		<div className="space-y-6">
 			{/* Page heading */}
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 				<div>
 					<h1 className="text-2xl font-bold tracking-tight">Tổng quan</h1>
 					<p className="text-muted-foreground">
 						Chào mừng trở lại! Đây là tổng quan hoạt động cửa hàng của bạn.
 					</p>
 				</div>
-				<Tabs
-					value={filter}
-					onValueChange={(v: any) => setFilter(v)}
-					className="w-full sm:w-auto"
-				>
-					<TabsList className="grid w-full grid-cols-3">
-						<TabsTrigger value="today">Hôm nay</TabsTrigger>
-						<TabsTrigger value="week">Tuần này</TabsTrigger>
-						<TabsTrigger value="month">Tháng này</TabsTrigger>
-					</TabsList>
-				</Tabs>
+				<div className="flex flex-col items-end gap-2">
+					<Tabs
+						value={filter}
+						onValueChange={(v: any) => setFilter(v)}
+						className="w-full lg:w-auto"
+					>
+						<TabsList className="grid w-full grid-cols-3 lg:flex lg:flex-wrap h-auto">
+							<TabsTrigger value="today">Hôm nay</TabsTrigger>
+							<TabsTrigger value="week">Tuần này</TabsTrigger>
+							<TabsTrigger value="month">Tháng này</TabsTrigger>
+							<TabsTrigger value="year">Năm nay</TabsTrigger>
+							<TabsTrigger value="all">Tất cả</TabsTrigger>
+							<TabsTrigger value="custom">Tuỳ chọn</TabsTrigger>
+						</TabsList>
+					</Tabs>
+
+					{filter === "custom" && (
+						<div className="flex items-center gap-2">
+							<input
+								type="date"
+								value={startDate}
+								max={endDate || undefined}
+								onChange={(e) => setStartDate(e.target.value)}
+								className="border rounded-md px-2 py-1 text-sm bg-background"
+							/>
+							<span className="text-muted-foreground">-</span>
+							<input
+								type="date"
+								value={endDate}
+								min={startDate || undefined}
+								onChange={(e) => setEndDate(e.target.value)}
+								className="border rounded-md px-2 py-1 text-sm bg-background"
+							/>
+							<Button
+								size="sm"
+								onClick={() => fetchDashboard({ filter, startDate, endDate })}
+								disabled={!startDate || !endDate || startDate > endDate}
+							>
+								Áp dụng
+							</Button>
+						</div>
+					)}
+				</div>
 			</div>
 
 			{/* ── 1. Metric Cards ─────────────────────────────────────────────── */}
