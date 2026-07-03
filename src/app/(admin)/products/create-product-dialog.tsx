@@ -76,7 +76,9 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 	// to avoid leaking memory from createObjectURL.
 	useEffect(() => {
 		return () => {
-			images.forEach((img) => { URL.revokeObjectURL(img.previewUrl); });
+			images.forEach((img) => {
+				URL.revokeObjectURL(img.previewUrl);
+			});
 		};
 	}, [images]);
 
@@ -143,7 +145,9 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 				description: `Sản phẩm "${data.nameVn}" đã được thêm vào hệ thống.`,
 			});
 			reset();
-			images.forEach((img) => { URL.revokeObjectURL(img.previewUrl); });
+			images.forEach((img) => {
+				URL.revokeObjectURL(img.previewUrl);
+			});
 			setImages([]);
 			setOpen(false);
 			onCreated?.();
@@ -156,7 +160,9 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 		setOpen(isOpen);
 		if (!isOpen) {
 			reset();
-			images.forEach((img) => { URL.revokeObjectURL(img.previewUrl); });
+			images.forEach((img) => {
+				URL.revokeObjectURL(img.previewUrl);
+			});
 			setImages([]);
 		}
 	};

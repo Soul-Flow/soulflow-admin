@@ -104,7 +104,9 @@ function ActionCell({
 	// Clean up object URLs to avoid memory leaks
 	useEffect(() => {
 		return () => {
-			images.forEach((img) => { URL.revokeObjectURL(img.previewUrl); });
+			images.forEach((img) => {
+				URL.revokeObjectURL(img.previewUrl);
+			});
 		};
 	}, [images]);
 
@@ -182,7 +184,9 @@ function ActionCell({
 				images.map((img) => img.file),
 			);
 			toast.success(`Đã cập nhật sản phẩm "${product.nameVn}" thành công!`);
-			images.forEach((img) => { URL.revokeObjectURL(img.previewUrl); });
+			images.forEach((img) => {
+				URL.revokeObjectURL(img.previewUrl);
+			});
 			setImages([]);
 			setShowEditDialog(false);
 			onMutated();
