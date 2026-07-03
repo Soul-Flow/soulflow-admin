@@ -1,12 +1,15 @@
 "use client";
 
 import {
+	AlertCircle,
 	DollarSign,
+	Loader2,
 	Package,
 	ShoppingCart,
 	TrendingUp,
 	Users,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
 	Bar,
 	BarChart,
@@ -41,7 +44,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import useDashboardStore from "@/stores/dashboardStore";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -50,68 +54,15 @@ const formatCurrency = (amount: number) =>
 		amount,
 	);
 
-// ─── Metric Cards Data ─────────────────────────────────────────────────────────
-
-interface MetricCard {
-	title: string;
-	value: string;
-	change: string;
-	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-	iconBg: string;
-	iconColor: string;
-}
-
-const metricCards: MetricCard[] = [
-	{
-		title: "Tổng Doanh Thu",
-		value: formatCurrency(128_500_000),
-		change: "+12.5% so với tháng trước",
-		icon: DollarSign,
-		iconBg: "bg-emerald-500/10",
-		iconColor: "text-emerald-600",
-	},
-	{
-		title: "Đơn Hàng Mới",
-		value: "284",
-		change: "+8.2% so với tháng trước",
-		icon: ShoppingCart,
-		iconBg: "bg-blue-500/10",
-		iconColor: "text-blue-600",
-	},
-	{
-		title: "Người Dùng Hoạt Động",
-		value: "1,423",
-		change: "+5.1% so với tháng trước",
-		icon: Users,
-		iconBg: "bg-violet-500/10",
-		iconColor: "text-violet-600",
-	},
-	{
-		title: "Tổng Sản Phẩm",
-		value: "156",
-		change: "+3 sản phẩm mới",
-		icon: Package,
-		iconBg: "bg-amber-500/10",
-		iconColor: "text-amber-600",
-	},
-];
-
-// ─── Bar Chart Data ─────────────────────────────────────────────────────────────
-
-const revenueByMonth = [
-	{ month: "T1", revenue: 95_000_000 },
-	{ month: "T2", revenue: 88_000_000 },
-	{ month: "T3", revenue: 105_000_000 },
-	{ month: "T4", revenue: 112_000_000 },
-	{ month: "T5", revenue: 128_500_000 },
-	{ month: "T6", revenue: 135_000_000 },
-	{ month: "T7", revenue: 142_000_000 },
-	{ month: "T8", revenue: 138_000_000 },
-	{ month: "T9", revenue: 125_000_000 },
-	{ month: "T10", revenue: 148_000_000 },
-	{ month: "T11", revenue: 156_000_000 },
-	{ month: "T12", revenue: 85_000_000 },
-];
+const CATEGORY_COLORS = [
+	"oklch(0.65 0.19 160)",
+	"oklch(0.6 0.18 250)",
+	"oklch(0.7 0.17 55)",
+	"oklch(0.55 0.2 320)",
+	"oklch(0.65 0.15 20)",
+	"oklch(0.75 0.15 100)",
+	"oklch(0.5 0.1 200)",
+] as const;
 
 const barChartConfig: ChartConfig = {
 	revenue: {
@@ -120,61 +71,118 @@ const barChartConfig: ChartConfig = {
 	},
 };
 
-// ─── Pie Chart Data ─────────────────────────────────────────────────────────────
-
-const CATEGORY_COLORS = [
-	"oklch(0.65 0.19 160)",
-	"oklch(0.6 0.18 250)",
-	"oklch(0.7 0.17 55)",
-	"oklch(0.55 0.2 320)",
-	"oklch(0.65 0.15 20)",
-] as const;
-
-const revenueByCategory = [
-	{ name: "hoaTuoi", value: 45_200_000 },
-	{ name: "boHoa", value: 32_800_000 },
-	{ name: "gioHoa", value: 18_500_000 },
-	{ name: "lanHoDiep", value: 22_000_000 },
-	{ name: "keHoa", value: 10_000_000 },
-];
-
-const pieChartConfig: ChartConfig = {
-	hoaTuoi: { label: "Hoa Tươi", color: CATEGORY_COLORS[0] },
-	boHoa: { label: "Bó Hoa", color: CATEGORY_COLORS[1] },
-	gioHoa: { label: "Giỏ Hoa", color: CATEGORY_COLORS[2] },
-	lanHoDiep: { label: "Lan Hồ Điệp", color: CATEGORY_COLORS[3] },
-	keHoa: { label: "Kệ Hoa", color: CATEGORY_COLORS[4] },
-};
-
-const topSelling = [
-	{ id: "PROD-001", name: "Hoa Hồng Đỏ", sold: 125, revenue: 43_750_000 },
-	{
-		id: "PROD-002",
-		name: "Giỏ Hoa Hướng Dương",
-		sold: 98,
-		revenue: 41_160_000,
-	},
-	{ id: "PROD-003", name: "Lan Hồ Điệp Trắng", sold: 65, revenue: 78_000_000 },
-	{ id: "PROD-004", name: "Bó Hoa Sinh Nhật", sold: 42, revenue: 21_000_000 },
-];
-
-const lowStock = [
-	{ id: "PROD-010", name: "Hoa Tulip Nhập Khẩu", stock: 0, status: "Hết hàng" },
-	{ id: "PROD-011", name: "Kệ Hoa Khai Trương", stock: 2, status: "Sắp hết" },
-	{ id: "PROD-012", name: "Bó Hoa Tình Yêu", stock: 5, status: "Sắp hết" },
-];
-
 // ─── Page Component ─────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+	const [filter, setFilter] = useState<"today" | "week" | "month">("month");
+	const { data, loading, error, fetchDashboard } = useDashboardStore();
+
+	useEffect(() => {
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		void fetchDashboard(filter);
+	}, [filter]);
+
+	if (loading) {
+		return (
+			<div className="flex h-[80vh] items-center justify-center">
+				<div className="flex flex-col items-center gap-2 text-muted-foreground">
+					<Loader2 className="h-8 w-8 animate-spin" />
+					<p>Đang tải dữ liệu tổng quan...</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (error || !data) {
+		return (
+			<div className="flex h-[80vh] items-center justify-center">
+				<div className="flex flex-col items-center gap-2 text-red-500">
+					<AlertCircle className="h-8 w-8" />
+					<p>{error || "Không thể tải dữ liệu"}</p>
+				</div>
+			</div>
+		);
+	}
+
+	const {
+		metrics,
+		revenueByMonth,
+		revenueByCategory,
+		topSellingProducts,
+		lowStockProducts,
+	} = data;
+
+	const getFilterText = () => {
+		if (filter === "today") return "so với hôm qua";
+		if (filter === "week") return "so với tuần trước";
+		return "so với tháng trước";
+	};
+
+	// Prepare pie chart config dynamically based on received categories
+	const pieChartConfig: ChartConfig = {};
+	revenueByCategory.forEach((cat, index) => {
+		pieChartConfig[cat.name] = {
+			label: cat.name,
+			color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+		};
+	});
+
+	const metricCards = [
+		{
+			title: "Tổng Doanh Thu",
+			value: formatCurrency(metrics.totalRevenue),
+			change: `${metrics.revenueChangePercentage > 0 ? "+" : ""}${metrics.revenueChangePercentage}% ${getFilterText()}`,
+			icon: DollarSign,
+			iconBg: "bg-emerald-500/10",
+			iconColor: "text-emerald-600",
+		},
+		{
+			title: "Đơn Hàng Mới",
+			value: metrics.newOrders.toString(),
+			change: `${metrics.ordersChangePercentage > 0 ? "+" : ""}${metrics.ordersChangePercentage}% ${getFilterText()}`,
+			icon: ShoppingCart,
+			iconBg: "bg-blue-500/10",
+			iconColor: "text-blue-600",
+		},
+		{
+			title: "Người Dùng Hoạt Động",
+			value: metrics.activeUsers.toString(),
+			change: `${metrics.usersChangePercentage > 0 ? "+" : ""}${metrics.usersChangePercentage}% ${getFilterText()}`,
+			icon: Users,
+			iconBg: "bg-violet-500/10",
+			iconColor: "text-violet-600",
+		},
+		{
+			title: "Tổng Sản Phẩm",
+			value: metrics.totalProducts.toString(),
+			change: `${metrics.newProductsCount > 0 ? "+" : ""}${metrics.newProductsCount} sản phẩm mới`,
+			icon: Package,
+			iconBg: "bg-amber-500/10",
+			iconColor: "text-amber-600",
+		},
+	];
+
 	return (
 		<div className="space-y-6">
 			{/* Page heading */}
-			<div>
-				<h1 className="text-2xl font-bold tracking-tight">Tổng quan</h1>
-				<p className="text-muted-foreground">
-					Chào mừng trở lại! Đây là tổng quan hoạt động cửa hàng của bạn.
-				</p>
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+				<div>
+					<h1 className="text-2xl font-bold tracking-tight">Tổng quan</h1>
+					<p className="text-muted-foreground">
+						Chào mừng trở lại! Đây là tổng quan hoạt động cửa hàng của bạn.
+					</p>
+				</div>
+				<Tabs
+					value={filter}
+					onValueChange={(v: any) => setFilter(v)}
+					className="w-full sm:w-auto"
+				>
+					<TabsList className="grid w-full grid-cols-3">
+						<TabsTrigger value="today">Hôm nay</TabsTrigger>
+						<TabsTrigger value="week">Tuần này</TabsTrigger>
+						<TabsTrigger value="month">Tháng này</TabsTrigger>
+					</TabsList>
+				</Tabs>
 			</div>
 
 			{/* ── 1. Metric Cards ─────────────────────────────────────────────── */}
@@ -193,8 +201,12 @@ export default function DashboardPage() {
 						</CardHeader>
 						<CardContent>
 							<div className="text-2xl font-bold">{card.value}</div>
-							<div className="mt-1 flex items-center gap-1 text-xs text-emerald-600">
-								<TrendingUp className="h-3 w-3" />
+							<div
+								className={`mt-1 flex items-center gap-1 text-xs ${card.change.startsWith("-") ? "text-red-600" : "text-emerald-600"}`}
+							>
+								<TrendingUp
+									className={`h-3 w-3 ${card.change.startsWith("-") ? "rotate-180" : ""}`}
+								/>
 								<span>{card.change}</span>
 							</div>
 						</CardContent>
@@ -209,7 +221,7 @@ export default function DashboardPage() {
 					<CardHeader>
 						<CardTitle>Doanh thu theo tháng</CardTitle>
 						<CardDescription>
-							Tổng doanh thu từ tháng 1 đến tháng 12 năm 2025
+							Tổng doanh thu từ tháng 1 đến tháng 12 năm nay
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -279,105 +291,84 @@ export default function DashboardPage() {
 				</Card>
 			</div>
 
-			<Tabs defaultValue="today" className="space-y-4">
-				<TabsList>
-					<TabsTrigger value="today">Hôm nay</TabsTrigger>
-					<TabsTrigger value="week">Tuần này</TabsTrigger>
-					<TabsTrigger value="month">Tháng này</TabsTrigger>
-				</TabsList>
-				<TabsContent value="today" className="space-y-4">
-					<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-						<Card>
-							<CardHeader>
-								<CardTitle>Sản phẩm bán chạy</CardTitle>
-								<CardDescription>
-									Top sản phẩm có doanh số cao nhất.
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>Tên sản phẩm</TableHead>
-											<TableHead className="text-right">Đã bán</TableHead>
-											<TableHead className="text-right">Doanh thu</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{topSelling.map((product) => (
-											<TableRow key={product.id}>
-												<TableCell className="font-medium">
-													{product.name}
-												</TableCell>
-												<TableCell className="text-right">
-													{product.sold}
-												</TableCell>
-												<TableCell className="text-right">
-													{formatCurrency(product.revenue)}
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							</CardContent>
-						</Card>
+			<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+				<Card>
+					<CardHeader>
+						<CardTitle>Sản phẩm bán chạy</CardTitle>
+						<CardDescription>
+							Top sản phẩm có doanh số cao nhất.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Tên sản phẩm</TableHead>
+									<TableHead className="text-right">Đã bán</TableHead>
+									<TableHead className="text-right">Doanh thu</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{topSellingProducts.map((product) => (
+									<TableRow key={product.id}>
+										<TableCell className="font-medium">
+											{product.name}
+										</TableCell>
+										<TableCell className="text-right">{product.sold}</TableCell>
+										<TableCell className="text-right">
+											{formatCurrency(product.revenue)}
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</CardContent>
+				</Card>
 
-						<Card>
-							<CardHeader>
-								<CardTitle>Cảnh báo tồn kho</CardTitle>
-								<CardDescription>
-									Sản phẩm sắp hết hàng cần nhập thêm.
-								</CardDescription>
-							</CardHeader>
-							<CardContent>
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>Tên sản phẩm</TableHead>
-											<TableHead className="text-right">Tồn kho</TableHead>
-											<TableHead>Trạng thái</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{lowStock.map((product) => (
-											<TableRow key={product.id}>
-												<TableCell className="font-medium">
-													{product.name}
-												</TableCell>
-												<TableCell className="text-right">
-													{product.stock}
-												</TableCell>
-												<TableCell>
-													<Badge
-														variant="destructive"
-														className={
-															product.stock === 0
-																? "bg-red-600 text-white"
-																: "bg-amber-500 text-slate-900"
-														}
-													>
-														{product.status}
-													</Badge>
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							</CardContent>
-						</Card>
-					</div>
-				</TabsContent>
-				<TabsContent value="week" className="space-y-4">
-					<div className="text-muted-foreground p-4 text-center border rounded-md">
-						Chưa có dữ liệu cho tuần này.
-					</div>
-				</TabsContent>
-				<TabsContent value="month" className="space-y-4">
-					<div className="text-muted-foreground p-4 text-center border rounded-md">
-						Chưa có dữ liệu cho tháng này.
-					</div>
-				</TabsContent>
-			</Tabs>
+				<Card>
+					<CardHeader>
+						<CardTitle>Cảnh báo tồn kho</CardTitle>
+						<CardDescription>
+							Sản phẩm sắp hết hàng cần nhập thêm.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Tên sản phẩm</TableHead>
+									<TableHead className="text-right">Tồn kho</TableHead>
+									<TableHead>Trạng thái</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{lowStockProducts.map((product) => (
+									<TableRow key={product.id}>
+										<TableCell className="font-medium">
+											{product.name}
+										</TableCell>
+										<TableCell className="text-right">
+											{product.stock}
+										</TableCell>
+										<TableCell>
+											<Badge
+												variant="destructive"
+												className={
+													product.stock === 0
+														? "bg-red-600 text-white"
+														: "bg-amber-500 text-slate-900"
+												}
+											>
+												{product.status}
+											</Badge>
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</CardContent>
+				</Card>
+			</div>
 		</div>
 	);
 }
