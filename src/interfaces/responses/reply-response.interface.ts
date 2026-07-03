@@ -7,4 +7,5 @@ export interface ReplyResponse {
 	createdDate: string;
 	commentPk: string;
 	accountPk: string;
+	role: "ADMIN" | "USER";
 }

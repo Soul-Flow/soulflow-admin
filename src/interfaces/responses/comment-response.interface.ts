@@ -9,5 +9,6 @@ export interface CommentResponse {
 	createdDate: string;
 	productPk: string;
 	accountPk: string;
+	role: "ADMIN" | "USER";
 	replyResponses: ReplyResponse[];
 }

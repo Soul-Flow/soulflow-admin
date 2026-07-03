@@ -1,8 +1,8 @@
 "use client";
 
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Eye, MoreHorizontal, Trash } from "lucide-react";
-import { useState } from "react";
+import { Eye, MoreHorizontal, Trash, Pencil, Send, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -14,6 +14,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -30,8 +31,158 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
 import type { CommentResponse } from "@/interfaces/responses/comment-response.interface";
 import useCommentStore from "@/stores/commentStore";
+import useReplyStore from "@/stores/replyStore";
+import useProductStore from "@/stores/productStore";
+
+function ProductNameRenderer({ pk }: { pk: string }) {
+	const { getByPk } = useProductStore();
+	const [name, setName] = useState<string>("Đang tải...");
+
+	useEffect(() => {
+		let isMounted = true;
+		getByPk({} as any, pk)
+			.then((product) => {
+				if (isMounted) {
+					setName(product?.nameVn || "SP không tồn tại");
+				}
+			})
+			.catch(() => {
+				if (isMounted) setName("Lỗi tải SP");
+			});
+		return () => {
+			isMounted = false;
+		};
+	}, [pk, getByPk]);
+
+	return <span className="font-medium text-sm text-primary">{name}</span>;
+}
+
+export function CommentExpandedRow({
+	row,
+	onMutated,
+}: {
+	row: Row<CommentResponse>;
+	onMutated: () => void;
+}) {
+	const comment = row.original;
+	console.log("DEBUG COMMENT DATA:", comment);
+	const { save: saveReply, deleteByPk: deleteReply, loading: replying } = useReplyStore();
+	const [replyContent, setReplyContent] = useState("");
+	const [editingReplyPk, setEditingReplyPk] = useState<number | null>(null);
+
+	const handleSaveReply = async () => {
+		if (!replyContent.trim()) return;
+		try {
+			await saveReply({
+				pk: editingReplyPk || undefined,
+				content: replyContent,
+				commentPk: Number(comment.pk),
+			});
+			toast.success(editingReplyPk ? "Cập nhật phản hồi thành công" : "Đã gửi phản hồi");
+			setReplyContent("");
+			setEditingReplyPk(null);
+			onMutated();
+		} catch {
+			toast.error("Lưu phản hồi thất bại");
+		}
+	};
+
+	const handleDeleteReply = async (pk: number) => {
+		if (!confirm("Bạn có chắc muốn xóa phản hồi này?")) return;
+		try {
+			await deleteReply(pk);
+			toast.success("Đã xóa phản hồi");
+			onMutated();
+		} catch {
+			toast.error("Xóa phản hồi thất bại");
+		}
+	};
+
+	const startEditReply = (pk: number, content: string) => {
+		setEditingReplyPk(pk);
+		setReplyContent(content);
+	};
+
+	const cancelEdit = () => {
+		setEditingReplyPk(null);
+		setReplyContent("");
+	};
+
+	return (
+		<div className="p-4 bg-muted/10 border-b shadow-inner flex flex-col gap-4">
+			<div className="flex flex-col gap-1">
+				<span className="font-semibold text-sm text-foreground">Nội dung bình luận đầy đủ:</span>
+				<p className="text-sm text-muted-foreground whitespace-pre-wrap">{comment.content}</p>
+			</div>
+
+			<div className="flex flex-col gap-3 pt-4 border-t">
+				<span className="font-semibold text-sm flex items-center justify-between">
+					<span>Phản hồi ({comment.replyResponses?.length || 0}):</span>
+				</span>
+				
+				{comment.replyResponses?.map((reply) => {
+					const isAdmin = reply.role === "ADMIN";
+					return (
+						<div
+							key={reply.pk}
+							className={`p-3 rounded-md text-sm border-l-4 ${isAdmin ? 'bg-primary/5 border-primary' : 'bg-muted/50 border-muted-foreground/30'}`}
+						>
+							<div className="flex items-center justify-between mb-2">
+								<div className="flex items-center gap-2">
+									<span className="font-medium text-foreground">
+										{reply.fullname || reply.username}
+									</span>
+									{isAdmin && (
+										<Badge variant="destructive" className="text-[10px] h-5 px-1.5">
+											Quản trị viên
+										</Badge>
+									)}
+									<span className="text-xs text-muted-foreground">
+										{reply.createdDate}
+									</span>
+								</div>
+								<div className="flex items-center gap-1">
+									<Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary" onClick={() => startEditReply(Number(reply.pk), reply.content)}>
+										<Pencil className="h-3 w-3" />
+									</Button>
+									<Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteReply(Number(reply.pk))}>
+										<Trash className="h-3 w-3" />
+									</Button>
+								</div>
+							</div>
+							<p className="text-foreground whitespace-pre-wrap">{reply.content}</p>
+						</div>
+					);
+				})}
+
+				<div className="mt-2 flex flex-col gap-2 max-w-3xl">
+					<Textarea 
+						placeholder="Viết phản hồi..." 
+						value={replyContent}
+						onChange={(e) => setReplyContent(e.target.value)}
+						rows={2}
+						className="resize-none"
+						disabled={replying}
+					/>
+					<div className="flex justify-end gap-2">
+						{editingReplyPk && (
+							<Button variant="ghost" size="sm" onClick={cancelEdit} disabled={replying}>
+								Hủy
+							</Button>
+						)}
+						<Button size="sm" onClick={handleSaveReply} disabled={replying || !replyContent.trim()}>
+							{replying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+							{editingReplyPk ? "Lưu" : "Gửi phản hồi"}
+						</Button>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
 
 function ActionCell({
 	row,
@@ -41,13 +192,13 @@ function ActionCell({
 	onMutated: () => void;
 }) {
 	const comment = row.original;
-	const { deleteByPk, loading } = useCommentStore();
+	const { deleteByPk: deleteComment, loading: deletingComment } = useCommentStore();
 	const [showViewSheet, setShowViewSheet] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
 	const handleDelete = async () => {
 		try {
-			await deleteByPk(Number(comment.pk));
+			await deleteComment(Number(comment.pk));
 			toast.success("Đã xóa bình luận thành công!");
 			setShowDeleteDialog(false);
 			onMutated();
@@ -105,9 +256,9 @@ function ActionCell({
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
 							<span className="font-medium text-muted-foreground">
-								Sản phẩm PK:
+								Sản phẩm:
 							</span>
-							<span className="col-span-2">{comment.productPk}</span>
+							<span className="col-span-2"><ProductNameRenderer pk={comment.productPk} /></span>
 						</div>
 						<div className="grid grid-cols-3 gap-2 border-b pb-2">
 							<span className="font-medium text-muted-foreground">
@@ -119,28 +270,10 @@ function ActionCell({
 							<span className="font-medium text-muted-foreground">
 								Nội dung:
 							</span>
-							<p className="p-3 bg-muted rounded-md text-foreground">
+							<p className="p-3 bg-muted rounded-md text-foreground whitespace-pre-wrap">
 								{comment.content}
 							</p>
 						</div>
-						{comment.replyResponses?.length > 0 && (
-							<div className="flex flex-col gap-2 pt-2">
-								<span className="font-medium text-muted-foreground">
-									Phản hồi ({comment.replyResponses.length}):
-								</span>
-								{comment.replyResponses.map((reply) => (
-									<div
-										key={reply.pk}
-										className="p-3 bg-muted/50 rounded-md text-sm border-l-2 border-primary/30"
-									>
-										<p className="font-medium text-xs text-muted-foreground mb-1">
-											{reply.username} · {reply.createdDate}
-										</p>
-										<p>{reply.content}</p>
-									</div>
-								))}
-							</div>
-						)}
 					</div>
 				</SheetContent>
 			</Sheet>
@@ -160,9 +293,9 @@ function ActionCell({
 						<AlertDialogAction
 							variant="destructive"
 							onClick={handleDelete}
-							disabled={loading}
+							disabled={deletingComment}
 						>
-							{loading ? "Đang xóa..." : "Xóa bình luận"}
+							{deletingComment ? "Đang xóa..." : "Xóa bình luận"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -177,6 +310,25 @@ export function columns({
 	onMutated: () => void;
 }): ColumnDef<CommentResponse>[] {
 	return [
+		{
+			id: "expander",
+			header: () => null,
+			cell: ({ row }) => {
+				return (
+					<Button
+						variant="ghost"
+						className="h-8 w-8 p-0"
+						onClick={row.getToggleExpandedHandler()}
+					>
+						{row.getIsExpanded() ? (
+							<ChevronDown className="h-4 w-4" />
+						) : (
+							<ChevronRight className="h-4 w-4" />
+						)}
+					</Button>
+				);
+			},
+		},
 		{
 			accessorKey: "pk",
 			header: "PK",
@@ -202,10 +354,8 @@ export function columns({
 		},
 		{
 			accessorKey: "productPk",
-			header: "Sản phẩm PK",
-			cell: ({ row }) => (
-				<span className="font-mono text-xs">{row.getValue("productPk")}</span>
-			),
+			header: "Sản phẩm",
+			cell: ({ row }) => <ProductNameRenderer pk={row.getValue("productPk")} />
 		},
 		{
 			accessorKey: "content",

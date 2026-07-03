@@ -49,11 +49,23 @@ interface ApiResponse<T> {
 	data: T;
 }
 
+export type DashboardFilter = "today" | "week" | "month" | "year" | "all" | "custom";
+
+export interface DashboardQueryParams {
+	filter?: DashboardFilter;
+	startDate?: string;
+	endDate?: string;
+}
+
 export const getDashboardSummary = async (
-	filter: "today" | "week" | "month" = "month",
+	params: DashboardQueryParams = { filter: "month" },
 ): Promise<DashboardData> => {
 	const response = await api.get<ApiResponse<DashboardData>>("/dashboard", {
-		params: { filter },
+		params,
+		headers: {
+			"Cache-Control": "no-cache",
+			Pragma: "no-cache",
+		}
 	});
 	return response.data.data;
 };

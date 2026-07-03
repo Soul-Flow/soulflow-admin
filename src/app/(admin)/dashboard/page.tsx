@@ -21,6 +21,7 @@ import {
 	YAxis,
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -46,6 +47,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useDashboardStore from "@/stores/dashboardStore";
+import { type DashboardFilter } from "@/services/dashboardService";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -66,51 +68,10 @@ const CATEGORY_COLORS = [
 
 const barChartConfig: ChartConfig = {
 	revenue: {
-		label: "Doanh thu",
-		color: "oklch(0.65 0.19 160)",
+		label: "Doanh thu ",
+		color: " oklch(0.65 0.19 160)",
 	},
 };
-
-// ─── Page Component ─────────────────────────────────────────────────────────────
-
-export default function DashboardPage() {
-	const [filter, setFilter] = useState<"today" | "week" | "month">("month");
-	const { data, loading, error, fetchDashboard } = useDashboardStore();
-
-	useEffect(() => {
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		void fetchDashboard(filter);
-	}, [filter]);
-
-	if (loading) {
-		return (
-			<div className="flex h-[80vh] items-center justify-center">
-				<div className="flex flex-col items-center gap-2 text-muted-foreground">
-					<Loader2 className="h-8 w-8 animate-spin" />
-					<p>Đang tải dữ liệu tổng quan...</p>
-				</div>
-			</div>
-		);
-	}
-
-	if (error || !data) {
-		return (
-			<div className="flex h-[80vh] items-center justify-center">
-				<div className="flex flex-col items-center gap-2 text-red-500">
-					<AlertCircle className="h-8 w-8" />
-					<p>{error || "Không thể tải dữ liệu"}</p>
-				</div>
-			</div>
-		);
-	}
-
-	const {
-		metrics,
-		revenueByMonth,
-		revenueByCategory,
-		topSellingProducts,
-		lowStockProducts,
-	} = data;
 
 	const getFilterText = () => {
 		if (filter === "today") return "so với hôm qua";
@@ -162,27 +123,158 @@ export default function DashboardPage() {
 		},
 	];
 
+export default function DashboardPage() {
+	const [filter, setFilter] = useState<DashboardFilter>("month");
+	const [startDate, setStartDate] = useState("");
+	const [endDate, setEndDate] = useState("");
+
+	const { data, loading, error, fetchDashboard } = useDashboardStore();
+
+	useEffect(() => {
+		// Only fetch automatically if not custom
+		if (filter !== "custom") {
+			// eslint-disable-next-line react-hooks/exhaustive-deps
+			void fetchDashboard({ filter });
+		}
+	}, [filter]);
+
+	if (loading) {
+		return (
+			<div className="flex h-[80vh] items-center justify-center">
+				<div className="flex flex-col items-center gap-2 text-muted-foreground">
+					<Loader2 className="h-8 w-8 animate-spin" />
+					<p>Đang tải dữ liệu tổng quan...</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (error || !data) {
+		return (
+			<div className="flex h-[80vh] items-center justify-center">
+				<div className="flex flex-col items-center gap-2 text-red-500">
+					<AlertCircle className="h-8 w-8" />
+					<p>{error || "Không thể tải dữ liệu"}</p>
+				</div>
+			</div>
+		);
+	}
+
+	const {
+		metrics,
+		revenueByMonth,
+		revenueByCategory,
+		topSellingProducts,
+		lowStockProducts,
+	} = data;
+
+	const getFilterText = () => {
+		if (filter === "today") return "so với hôm qua";
+		if (filter === "week") return "so với tuần trước";
+		if (filter === "month") return "so với tháng trước";
+		if (filter === "year") return "so với năm trước";
+		if (filter === "all") return "toàn thời gian";
+		if (filter === "custom") return "trong khoảng thời gian này";
+		return "";
+	};
+
+	// Prepare pie chart config dynamically based on received categories
+	const pieChartConfig: ChartConfig = {};
+	revenueByCategory.forEach((cat, index) => {
+		pieChartConfig[cat.name] = {
+			label: cat.name,
+			color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+		};
+	});
+
+	const metricCards = [
+		{
+			title: "Tổng Doanh Thu",
+			value: formatCurrency(metrics.totalRevenue),
+			change: `${metrics.revenueChangePercentage > 0 ? "+" : ""}${metrics.revenueChangePercentage}% ${getFilterText()}`,
+			icon: DollarSign,
+			iconBg: "bg-emerald-500/10",
+			iconColor: "text-emerald-600",
+		},
+		{
+			title: "Đơn Hàng Mới",
+			value: metrics.newOrders.toString(),
+			change: `${metrics.ordersChangePercentage > 0 ? "+" : ""}${metrics.ordersChangePercentage}% ${getFilterText()}`,
+			icon: ShoppingCart,
+			iconBg: "bg-blue-500/10",
+			iconColor: "text-blue-600",
+		},
+		{
+			title: "Người Dùng Hoạt Động",
+			value: metrics.activeUsers.toString(),
+			change: `${metrics.usersChangePercentage > 0 ? "+" : ""}${metrics.usersChangePercentage}% ${getFilterText()}`,
+			icon: Users,
+			iconBg: "bg-violet-500/10",
+			iconColor: "text-violet-600",
+		},
+		{
+			title: "Tổng Sản Phẩm",
+			value: metrics.totalProducts.toString(),
+			change: `${metrics.newProductsCount > 0 ? "+" : ""}${metrics.newProductsCount} sản phẩm mới`,
+			icon: Package,
+			iconBg: "bg-amber-500/10",
+			iconColor: "text-amber-600",
+		},
+	];
+
 	return (
 		<div className="space-y-6">
 			{/* Page heading */}
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 				<div>
 					<h1 className="text-2xl font-bold tracking-tight">Tổng quan</h1>
 					<p className="text-muted-foreground">
 						Chào mừng trở lại! Đây là tổng quan hoạt động cửa hàng của bạn.
 					</p>
 				</div>
-				<Tabs
-					value={filter}
-					onValueChange={(v: any) => setFilter(v)}
-					className="w-full sm:w-auto"
-				>
-					<TabsList className="grid w-full grid-cols-3">
-						<TabsTrigger value="today">Hôm nay</TabsTrigger>
-						<TabsTrigger value="week">Tuần này</TabsTrigger>
-						<TabsTrigger value="month">Tháng này</TabsTrigger>
-					</TabsList>
-				</Tabs>
+				<div className="flex flex-col items-end gap-2">
+					<Tabs
+						value={filter}
+						onValueChange={(v: any) => setFilter(v)}
+						className="w-full lg:w-auto"
+					>
+						<TabsList className="grid w-full grid-cols-3 lg:flex lg:flex-wrap h-auto">
+							<TabsTrigger value="today">Hôm nay</TabsTrigger>
+							<TabsTrigger value="week">Tuần này</TabsTrigger>
+							<TabsTrigger value="month">Tháng này</TabsTrigger>
+							<TabsTrigger value="year">Năm nay</TabsTrigger>
+							<TabsTrigger value="all">Tất cả</TabsTrigger>
+							<TabsTrigger value="custom">Tuỳ chọn</TabsTrigger>
+						</TabsList>
+					</Tabs>
+
+					{filter === "custom" && (
+						<div className="flex items-center gap-2">
+							<input
+								type="date"
+								value={startDate}
+								max={endDate || undefined}
+								onChange={(e) => setStartDate(e.target.value)}
+								className="border rounded-md px-2 py-1 text-sm bg-background"
+							/>
+							<span className="text-muted-foreground">-</span>
+							<input
+								type="date"
+								value={endDate}
+								min={startDate || undefined}
+								onChange={(e) => setEndDate(e.target.value)}
+								className="border rounded-md px-2 py-1 text-sm bg-background"
+							/>
+							<Button
+								size="sm"
+								onClick={() => fetchDashboard({ filter, startDate, endDate })}
+								disabled={!startDate || !endDate || startDate > endDate}
+							>
+								Áp dụng
+							</Button>
+						</div>
+					)}
+				</div>
 			</div>
 
 			{/* ── 1. Metric Cards ─────────────────────────────────────────────── */}
