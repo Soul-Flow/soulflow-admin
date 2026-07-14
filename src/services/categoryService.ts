@@ -12,7 +12,7 @@ export const categoryService = {
 	},
 
 	deleteByPk: async (pk: number): Promise<void> => {
-		await api.delete(`/category/admin/${pk}`);
+		await api.delete(`/category/${pk}`);
 	},
 
 	findByPk: async (pk: number): Promise<CategoryResponse> => {

@@ -5,11 +5,11 @@ import {
 	Flower2,
 	Home,
 	LineChart,
+	LogOut,
 	Menu,
 	MessageSquare,
 	Package,
 	Package2,
-	Search,
 	ShoppingCart,
 	Users,
 } from "lucide-react";
@@ -73,83 +73,18 @@ export default function AdminLayout({
 							<span className="">SouFlow Admin</span>
 						</Link>
 
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="outline"
-									size="icon"
-									className="ml-auto h-8 w-8 relative"
-								>
-									<Bell className="h-4 w-4" />
-									{unreadCount > 0 && (
-										<span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-600 animate-pulse"></span>
-									)}
-									<span className="sr-only">Toggle notifications</span>
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								align="end"
-								className="w-80 max-h-[80vh] overflow-y-auto"
-							>
-								<DropdownMenuLabel className="flex justify-between items-center">
-									Thông báo
-									{unreadCount > 0 && (
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={markAllAsRead}
-											className="h-auto p-1 text-xs"
-										>
-											Đánh dấu đã đọc
-										</Button>
-									)}
-								</DropdownMenuLabel>
-								<DropdownMenuSeparator />
-								{notifications.length === 0 ? (
-									<div className="p-4 text-center text-sm text-muted-foreground">
-										Chưa có thông báo nào.
-									</div>
-								) : (
-									notifications.map((notif, index) => (
-										<DropdownMenuItem
-											key={index}
-											className="cursor-pointer flex flex-col items-start gap-1 p-3"
-											onSelect={() => {
-												if (
-													[
-														"ORDER_PAID",
-														"NEW_ORDER",
-														"ORDER_STATUS_CHANGED",
-													].includes(notif.type)
-												) {
-													router.push(
-														`/orders?keyword=${notif.referenceId}&action=view`,
-													);
-												} else if (notif.type === "LOW_STOCK") {
-													router.push(
-														`/products?keyword=${notif.referenceId}&action=view`,
-													);
-												}
-											}}
-										>
-											<div className="font-semibold text-sm">{notif.title}</div>
-											<div className="text-xs text-muted-foreground line-clamp-2">
-												{notif.message}
-											</div>
-											<div className="text-[10px] text-muted-foreground mt-1">
-												{new Date(notif.timestamp).toLocaleString("vi-VN")}
-											</div>
-										</DropdownMenuItem>
-									))
-								)}
-							</DropdownMenuContent>
-						</DropdownMenu>
+						<div className="w-8" />
+						{/* Spacer to replace notification bell location */}
 					</div>
 					<div className="flex-1">
 						<nav className="grid items-start px-2 text-base font-medium lg:px-4">
 							<Link href="/dashboard" className={linkClass("/dashboard")}>
 								<Home className="h-4 w-4" />
 								Dashboard
+							</Link>
+							<Link href="/processing-station" className={linkClass("/processing-station")}>
+								<Package className="h-4 w-4" />
+								Trạm xử lý
 							</Link>
 							<Link href="/orders" className={linkClass("/orders")}>
 								<ShoppingCart className="h-4 w-4" />
@@ -208,61 +143,93 @@ export default function AdminLayout({
 						</SheetContent>
 					</Sheet>
 
-					<div className="w-full flex-1">
-						<form>
-							<div className="relative">
-								<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-								<Input
-									type="search"
-									placeholder="Tìm kiếm nhanh..."
-									className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
-								/>
-							</div>
-						</form>
-					</div>
+					<div className="w-full flex-1"></div>
 
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button
-								variant="ghost"
+								variant="outline"
 								size="icon"
-								className="rounded-full h-8 w-8"
+								className="ml-auto h-8 w-8 relative"
 							>
-								<Avatar className="h-8 w-8">
-									<AvatarImage src="" alt="Admin" />
-									<AvatarFallback>AD</AvatarFallback>
-								</Avatar>
-								<span className="sr-only">Toggle user menu</span>
+								<Bell className="h-4 w-4" />
+								{unreadCount > 0 && (
+									<span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-600 animate-pulse"></span>
+								)}
+								<span className="sr-only">Toggle notifications</span>
 							</Button>
 						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuLabel>Tài khoản Admin</DropdownMenuLabel>
+						<DropdownMenuContent
+							align="end"
+							className="w-80 max-h-[80vh] overflow-y-auto"
+						>
+							<DropdownMenuLabel className="flex justify-between items-center">
+								Thông báo
+								{unreadCount > 0 && (
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={markAllAsRead}
+										className="h-auto p-1 text-xs"
+									>
+										Đánh dấu đã đọc
+									</Button>
+								)}
+							</DropdownMenuLabel>
 							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								className="cursor-pointer"
-								onSelect={() => router.push("/profile")}
-							>
-								Hồ sơ của tôi
-							</DropdownMenuItem>
-							<DropdownMenuItem
-								className="cursor-pointer"
-								onSelect={() => router.push("/settings")}
-							>
-								Cài đặt
-							</DropdownMenuItem>
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								className="cursor-pointer text-red-600 focus:text-red-600"
-								onClick={() => {
-									localStorage.removeItem("admin_token");
-									document.cookie = "admin_token=; Max-Age=0; path=/";
-									window.location.href = "/login";
-								}}
-							>
-								Đăng xuất
-							</DropdownMenuItem>
+							{notifications.length === 0 ? (
+								<div className="p-4 text-center text-sm text-muted-foreground">
+									Chưa có thông báo nào.
+								</div>
+							) : (
+								notifications.map((notif, index) => (
+									<DropdownMenuItem
+										key={index}
+										className="cursor-pointer flex flex-col items-start gap-1 p-3"
+										onSelect={() => {
+											if (
+												[
+													"ORDER_PAID",
+													"NEW_ORDER",
+													"ORDER_STATUS_CHANGED",
+												].includes(notif.type)
+											) {
+												router.push(
+													`/processing-station?orderId=${notif.referenceId}`,
+												);
+											} else if (notif.type === "LOW_STOCK") {
+												router.push(
+													`/products?keyword=${notif.referenceId}&action=view`,
+												);
+											}
+										}}
+									>
+										<div className="font-semibold text-sm">{notif.title}</div>
+										<div className="text-xs text-muted-foreground line-clamp-2">
+											{notif.message}
+										</div>
+										<div className="text-[10px] text-muted-foreground mt-1">
+											{new Date(notif.timestamp).toLocaleString("vi-VN")}
+										</div>
+									</DropdownMenuItem>
+								))
+							)}
 						</DropdownMenuContent>
 					</DropdownMenu>
+
+					<Button
+						variant="ghost"
+						size="icon"
+						className="rounded-full h-8 w-8"
+						onClick={() => {
+							localStorage.removeItem("admin_token");
+							document.cookie = "admin_token=; Max-Age=0; path=/";
+							window.location.href = "/login";
+						}}
+					>
+						<LogOut className="h-5 w-5 text-red-600" />
+						<span className="sr-only">Đăng xuất</span>
+					</Button>
 				</header>
 
 				<main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">

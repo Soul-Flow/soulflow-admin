@@ -35,12 +35,27 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	Sheet,
 	SheetContent,
 	SheetDescription,
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { OrderStatus } from "@/enums/order-status.enum";
 import type { OrderResponse } from "@/interfaces/responses/order-response.interface";
 import useOrderStore from "@/stores/orderStore";
@@ -82,6 +97,65 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 	},
 };
 
+function StatusCell({
+	row,
+	onMutated,
+}: {
+	row: Row<OrderResponse>;
+	onMutated: () => void;
+}) {
+	const order = row.original;
+	const { save } = useOrderStore();
+	const [status, setStatus] = useState<string>(order.status);
+	const [isUpdating, setIsUpdating] = useState(false);
+
+	const handleStatusChange = async (newStatus: string) => {
+		setStatus(newStatus);
+		setIsUpdating(true);
+		try {
+			await save({
+				pk: Number(order.pk),
+				status: newStatus as OrderStatus,
+				fullname: order.fullname,
+				phone: order.phone,
+				address: order.address,
+				accountPk: Number(order.accountPk),
+				orderDetailRequests: [],
+			});
+			toast.success(`Đã cập nhật trạng thái đơn hàng ${order.code}!`);
+			onMutated();
+		} catch {
+			toast.error("Cập nhật trạng thái thất bại. Vui lòng thử lại.");
+			setStatus(order.status); // Revert on error
+		} finally {
+			setIsUpdating(false);
+		}
+	};
+
+	const config = statusConfig[status] ?? { label: status, className: "" };
+
+	return (
+		<Select
+			value={status}
+			onValueChange={handleStatusChange}
+			disabled={isUpdating}
+		>
+			<SelectTrigger
+				className={`h-7 w-[130px] text-xs font-medium ${config.className}`}
+			>
+				<SelectValue />
+			</SelectTrigger>
+			<SelectContent>
+				{Object.entries(statusConfig).map(([val, cfg]) => (
+					<SelectItem key={val} value={val} className="text-xs">
+						{cfg.label}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
+	);
+}
+
 function ActionCell({
 	row,
 	onMutated,
@@ -90,11 +164,9 @@ function ActionCell({
 	onMutated: () => void;
 }) {
 	const order = row.original;
-	const { save, deleteByPk, loading } = useOrderStore();
+	const { deleteByPk, loading } = useOrderStore();
 	const [showViewSheet, setShowViewSheet] = useState(false);
-	const [showEditDialog, setShowEditDialog] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-	const [newStatus, setNewStatus] = useState<string>(order.status);
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const pathname = usePathname();
@@ -120,25 +192,6 @@ function ActionCell({
 		style: "currency",
 		currency: "VND",
 	}).format(totalNum);
-
-	const handleUpdateStatus = async () => {
-		try {
-			await save({
-				pk: Number(order.pk),
-				status: newStatus as OrderStatus,
-				fullname: order.fullname,
-				phone: order.phone,
-				address: order.address,
-				accountPk: Number(order.accountPk),
-				orderDetailRequests: [],
-			});
-			toast.success(`Đã cập nhật trạng thái đơn hàng ${order.code}!`);
-			setShowEditDialog(false);
-			onMutated();
-		} catch {
-			toast.error("Cập nhật trạng thái thất bại. Vui lòng thử lại.");
-		}
-	};
 
 	const handleDelete = async () => {
 		try {
@@ -174,12 +227,6 @@ function ActionCell({
 					>
 						<Eye className="mr-2 h-4 w-4" /> Xem chi tiết
 					</DropdownMenuItem>
-					<DropdownMenuItem
-						className="cursor-pointer"
-						onSelect={() => setShowEditDialog(true)}
-					>
-						<RefreshCcw className="mr-2 h-4 w-4" /> Cập nhật trạng thái
-					</DropdownMenuItem>
 					<DropdownMenuSeparator />
 					<DropdownMenuItem
 						className="cursor-pointer text-red-600 focus:text-red-600"
@@ -196,114 +243,125 @@ function ActionCell({
 						<SheetTitle>Chi Tiết Đơn Hàng</SheetTitle>
 						<SheetDescription>Mã đơn: {order.code}</SheetDescription>
 					</SheetHeader>
-					<div className="mt-6 space-y-4 text-sm">
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Khách hàng:
-							</span>
-							<span className="col-span-2 font-medium">{order.fullname}</span>
+					<div className="mt-6 px-4 pb-6 space-y-4 text-sm">
+						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Khách hàng:
+								</span>
+								<span className="col-span-2 font-medium">{order.fullname}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Điện thoại:
+								</span>
+								<span className="col-span-2">{order.phone}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Địa chỉ:
+								</span>
+								<span className="col-span-2">{order.address}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
+								<span className="font-medium text-muted-foreground">
+									Trạng thái:
+								</span>
+								<span className="col-span-2">
+									<Badge variant="outline" className={statusInfo.className}>
+										{statusInfo.label}
+									</Badge>
+								</span>
+							</div>
 						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Điện thoại:
-							</span>
-							<span className="col-span-2">{order.phone}</span>
+
+						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Tổng tiền:
+								</span>
+								<span className="col-span-2 font-medium text-primary">
+									{formattedTotal}
+								</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Phí ship:
+								</span>
+								<span className="col-span-2 font-medium">
+									{new Intl.NumberFormat("vi-VN", {
+										style: "currency",
+										currency: "VND",
+									}).format(parseFloat(order.shippingFee || "0"))}
+								</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Thanh toán:
+								</span>
+								<span className="col-span-2 uppercase font-medium">
+									{order.paymentMethod || "COD"}
+								</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Ngày đặt:
+								</span>
+								<span className="col-span-2">{order.createdDate}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Hết hạn:
+								</span>
+								<span className="col-span-2">{order.expiredDate}</span>
+							</div>
 						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Địa chỉ:
-							</span>
-							<span className="col-span-2">{order.address}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Tổng tiền:
-							</span>
-							<span className="col-span-2 font-medium">{formattedTotal}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Phí ship:
-							</span>
-							<span className="col-span-2 font-medium">
-								{new Intl.NumberFormat("vi-VN", {
-									style: "currency",
-									currency: "VND",
-								}).format(parseFloat(order.shippingFee || "0"))}
-							</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Thanh toán:
-							</span>
-							<span className="col-span-2 uppercase font-medium">
-								{order.paymentMethod || "COD"}
-							</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Ngày đặt:
-							</span>
-							<span className="col-span-2">{order.createdDate}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Hết hạn:
-							</span>
-							<span className="col-span-2">{order.expiredDate}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
-							<span className="font-medium text-muted-foreground">
-								Trạng thái:
-							</span>
-							<span className="col-span-2">
-								<Badge variant="outline" className={statusInfo.className}>
-									{statusInfo.label}
-								</Badge>
-							</span>
+
+						{/* Order Items */}
+						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm">
+							<h3 className="font-semibold text-lg border-b pb-4 mb-4">Sản phẩm đã đặt</h3>
+							{order.orderDetailResponses && order.orderDetailResponses.length > 0 ? (
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead>Sản phẩm</TableHead>
+											<TableHead className="text-right">Đơn giá</TableHead>
+											<TableHead className="text-center">Số lượng</TableHead>
+											<TableHead className="text-right">Thành tiền</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{order.orderDetailResponses.map((item, index) => {
+											const name = item.name || "Sản phẩm";
+											const price = parseFloat(item.price || "0");
+											const qty = parseInt(item.quantity || "1", 10);
+											const total = parseFloat(item.subtotal || (price * qty).toString());
+											
+											const formatCurrency = (val: number) => new Intl.NumberFormat("vi-VN", {
+												style: "currency",
+												currency: "VND",
+											}).format(val);
+
+											return (
+												<TableRow key={index}>
+													<TableCell className="font-medium">{name}</TableCell>
+													<TableCell className="text-right text-muted-foreground">{formatCurrency(price)}</TableCell>
+													<TableCell className="text-center font-medium">{qty}</TableCell>
+													<TableCell className="text-right text-primary font-medium">{formatCurrency(total)}</TableCell>
+												</TableRow>
+											);
+										})}
+									</TableBody>
+								</Table>
+							) : (
+								<div className="text-center py-8 text-muted-foreground text-sm">
+									Không có thông tin chi tiết sản phẩm.
+								</div>
+							)}
 						</div>
 					</div>
 				</SheetContent>
 			</Sheet>
-
-			<Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Cập Nhật Đơn Hàng</DialogTitle>
-						<DialogDescription>
-							Chỉnh sửa trạng thái đơn hàng {order.code}.
-						</DialogDescription>
-					</DialogHeader>
-					<div className="grid gap-4 py-4">
-						<div className="grid gap-2">
-							<Label>Khách hàng</Label>
-							<span className="text-sm font-medium">{order.fullname}</span>
-						</div>
-						<div className="grid gap-2">
-							<Label>Trạng thái mới</Label>
-							<select
-								className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-								value={newStatus}
-								onChange={(e) => setNewStatus(e.target.value)}
-							>
-								{Object.entries(statusConfig).map(([val, cfg]) => (
-									<option key={val} value={val}>
-										{cfg.label}
-									</option>
-								))}
-							</select>
-						</div>
-					</div>
-					<DialogFooter>
-						<Button variant="outline" onClick={() => setShowEditDialog(false)}>
-							Hủy
-						</Button>
-						<Button onClick={handleUpdateStatus} disabled={loading}>
-							{loading ? "Đang lưu..." : "Lưu thay đổi"}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
 
 			<AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
 				<AlertDialogContent>
@@ -428,15 +486,7 @@ export function columns({
 		{
 			accessorKey: "status",
 			header: "Trạng thái",
-			cell: ({ row }) => {
-				const status = row.getValue("status") as string;
-				const config = statusConfig[status] ?? { label: status, className: "" };
-				return (
-					<Badge variant="outline" className={config.className}>
-						{config.label}
-					</Badge>
-				);
-			},
+			cell: ({ row }) => <StatusCell row={row} onMutated={onMutated} />,
 		},
 		{
 			id: "actions",

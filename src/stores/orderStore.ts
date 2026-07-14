@@ -11,7 +11,9 @@ interface OrderState {
 
 	loading: boolean;
 
-	save: (request: OrderRequest) => Promise<OrderResponse>;
+	save: (request: OrderRequest) => Promise<OrderResponse | undefined>;
+
+	createCustomOrder: (request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest) => Promise<OrderResponse | undefined>;
 
 	deleteByPk: (pk: number) => Promise<void>;
 
@@ -42,6 +44,13 @@ interface OrderState {
 		pageSize?: number;
 	}) => Promise<PageResponse<OrderResponse> | undefined>;
 
+	fetchActiveOrders: (params?: {
+		keyword?: string | null;
+		sortOrder?: SortOrder;
+		pageNumber?: number;
+		pageSize?: number;
+	}) => Promise<PageResponse<OrderResponse> | undefined>;
+
 	clearCache: () => void;
 }
 
@@ -66,6 +75,23 @@ const useOrderStore = create<OrderState>((set, get) => ({
 		try {
 			set({ loading: true });
 			await orderService.deleteByPk(pk);
+		} catch (error) {
+			console.log(error);
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+
+	createCustomOrder: async (request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest) => {
+		try {
+			set({ loading: true });
+			const response = await orderService.createCustomOrder(request);
+
+			const { filter } = get();
+			await filter({});
+
+			return response;
 		} catch (error) {
 			console.log(error);
 			throw error;
@@ -178,6 +204,33 @@ const useOrderStore = create<OrderState>((set, get) => ({
 			});
 
 			return newPage;
+		} catch (error) {
+			console.log(error);
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+
+	fetchActiveOrders: async ({
+		keyword = null,
+		sortOrder = SortOrder.ASC,
+		pageNumber = 0,
+		pageSize = 50,
+	}: {
+		keyword?: string | null;
+		sortOrder?: SortOrder;
+		pageNumber?: number;
+		pageSize?: number;
+	} = {}): Promise<PageResponse<OrderResponse> | undefined> => {
+		try {
+			set({ loading: true });
+			return await orderService.getActiveOrders({
+				keyword,
+				sortOrder,
+				pageNumber,
+				pageSize,
+			});
 		} catch (error) {
 			console.log(error);
 			throw error;

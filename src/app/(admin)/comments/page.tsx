@@ -22,7 +22,7 @@ import {
 import { SortOrder } from "@/enums/sort-order.enum";
 import type { CommentResponse } from "@/interfaces/responses/comment-response.interface";
 import useCommentStore from "@/stores/commentStore";
-import { columns, CommentExpandedRow } from "./columns";
+import { CommentExpandedRow, columns } from "./columns";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20] as const;
 type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
@@ -176,9 +176,9 @@ export default function CommentsPage() {
 					</Select>
 				</div>
 
-				<DataTable 
-					columns={columns({ onMutated })} 
-					data={data} 
+				<DataTable
+					columns={columns({ onMutated })}
+					data={data}
 					getRowCanExpand={() => true}
 					renderSubComponent={({ row }) => (
 						<CommentExpandedRow row={row} onMutated={onMutated} />

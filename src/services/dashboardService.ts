@@ -49,7 +49,13 @@ interface ApiResponse<T> {
 	data: T;
 }
 
-export type DashboardFilter = "today" | "week" | "month" | "year" | "all" | "custom";
+export type DashboardFilter =
+	| "today"
+	| "week"
+	| "month"
+	| "year"
+	| "all"
+	| "custom";
 
 export interface DashboardQueryParams {
 	filter?: DashboardFilter;
@@ -65,7 +71,7 @@ export const getDashboardSummary = async (
 		headers: {
 			"Cache-Control": "no-cache",
 			Pragma: "no-cache",
-		}
+		},
 	});
 	return response.data.data;
 };

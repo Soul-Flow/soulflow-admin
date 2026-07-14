@@ -75,7 +75,7 @@ const useProductStore = create<ProductState>((set, get) => ({
 	deleteByPk: async (pk: number): Promise<void> => {
 		try {
 			set({ loading: true });
-			productService.deleteByPk(pk);
+			await productService.deleteByPk(pk);
 		} catch (error) {
 			console.log(error);
 			throw error;

@@ -106,7 +106,19 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 		const files = e.target.files;
 		if (!files || files.length === 0) return;
 
-		const newImages: ImagePreview[] = Array.from(files).map((file) => ({
+		const validFiles = Array.from(files).filter((file) => {
+			if (!file.type.startsWith("image/")) {
+				toast.error(`File "${file.name}" không phải là hình ảnh.`);
+				return false;
+			}
+			if (file.size > 5 * 1024 * 1024) {
+				toast.error(`File "${file.name}" vượt quá 5MB.`);
+				return false;
+			}
+			return true;
+		});
+
+		const newImages: ImagePreview[] = validFiles.map((file) => ({
 			file,
 			previewUrl: URL.createObjectURL(file),
 		}));

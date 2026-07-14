@@ -56,6 +56,11 @@ export const accountService = {
 		return response.data;
 	},
 
+	findByUsername: async (username: string): Promise<AccountResponse> => {
+		const response = await api.get<AccountResponse>(`/account/by-username/${username}`);
+		return response.data;
+	},
+
 	filter: async ({
 		keyword = null,
 		fromDate = null,

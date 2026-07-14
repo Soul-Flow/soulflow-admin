@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Edit, MoreHorizontal, Trash } from "lucide-react";
+import { Edit, MoreHorizontal, Trash, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -60,9 +60,11 @@ type EditFormValues = z.infer<typeof editSchema>;
 function ActionCell({
 	row,
 	onMutated,
+	isDeletedList,
 }: {
 	row: Row<CategoryResponse>;
 	onMutated: () => void;
+	isDeletedList: boolean;
 }) {
 	const category = row.original;
 	const { save, deleteByPk } = useCategoryStore();
@@ -119,6 +121,25 @@ function ActionCell({
 		}
 	};
 
+	const handleRestore = async () => {
+		try {
+			await save({
+				pk: Number(category.pk),
+				nameVn: category.nameVn,
+				nameEng: category.nameEng,
+				descriptionVn: category.descriptionVn ?? "",
+				descriptionEng: category.descriptionEng ?? "",
+				deleted: false,
+			});
+			toast.success(
+				`Đã hoàn tác danh mục "${category.nameVn}" - "${category.nameEng}" thành công!`,
+			);
+			onMutated();
+		} catch {
+			toast.error("Hoàn tác danh mục thất bại. Vui lòng thử lại.");
+		}
+	};
+
 	return (
 		<>
 			<DropdownMenu>
@@ -139,13 +160,23 @@ function ActionCell({
 						Chỉnh sửa
 					</DropdownMenuItem>
 					<DropdownMenuSeparator />
-					<DropdownMenuItem
-						className="cursor-pointer text-red-600 focus:text-red-600"
-						onSelect={() => setShowDeleteDialog(true)}
-					>
-						<Trash className="mr-2 h-4 w-4" />
-						Xóa danh mục
-					</DropdownMenuItem>
+					{isDeletedList ? (
+						<DropdownMenuItem
+							className="cursor-pointer text-emerald-600 focus:text-emerald-600"
+							onSelect={handleRestore}
+						>
+							<RotateCcw className="mr-2 h-4 w-4" />
+							Hoàn tác danh mục
+						</DropdownMenuItem>
+					) : (
+						<DropdownMenuItem
+							className="cursor-pointer text-red-600 focus:text-red-600"
+							onSelect={() => setShowDeleteDialog(true)}
+						>
+							<Trash className="mr-2 h-4 w-4" />
+							Xóa danh mục
+						</DropdownMenuItem>
+					)}
 				</DropdownMenuContent>
 			</DropdownMenu>
 
@@ -239,8 +270,10 @@ function ActionCell({
 
 export function columns({
 	onMutated,
+	isDeletedList,
 }: {
 	onMutated: () => void;
+	isDeletedList: boolean;
 }): ColumnDef<CategoryResponse>[] {
 	return [
 		{
@@ -294,7 +327,7 @@ export function columns({
 		{
 			id: "actions",
 			header: () => <span className="sr-only">Hành động</span>,
-			cell: ({ row }) => <ActionCell row={row} onMutated={onMutated} />,
+			cell: ({ row }) => <ActionCell row={row} onMutated={onMutated} isDeletedList={isDeletedList} />,
 		},
 	];
 }

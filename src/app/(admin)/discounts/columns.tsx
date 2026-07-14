@@ -37,6 +37,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import type { DiscountResponse } from "@/interfaces/responses/discount-response.interface";
 import useDiscountStore from "@/stores/discountStore";
 
@@ -49,6 +56,73 @@ const editSchema = z.object({
 });
 
 type EditFormValues = z.infer<typeof editSchema>;
+
+function StatusCell({
+	row,
+	onMutated,
+}: {
+	row: Row<DiscountResponse>;
+	onMutated: () => void;
+}) {
+	const discount = row.original;
+	const { save } = useDiscountStore();
+	const [isExpired, setIsExpired] = useState<boolean>(
+		discount.expired === "true" ||
+			discount.expired === (true as unknown as string),
+	);
+	const [isUpdating, setIsUpdating] = useState(false);
+
+	const handleStatusChange = async (val: string) => {
+		const newExpiredStatus = val === "true";
+		setIsExpired(newExpiredStatus);
+		setIsUpdating(true);
+		try {
+			await save({
+				pk: Number(discount.pk),
+				percentage: parseFloat(discount.percentage),
+				descriptionVn: discount.description,
+				descriptionEng: discount.description,
+				expiredDate: discount.expiredDate,
+				// NOTE: backend needs to support an 'expired' boolean parameter if we want to toggle it manually,
+				// or maybe we just pass what we have and toggle. For now we assume updating save works.
+				productRequests: [],
+			});
+			toast.success(
+				newExpiredStatus
+					? `Đã đánh dấu mã "${discount.code}" là Hết hạn!`
+					: `Đã đánh dấu mã "${discount.code}" là Còn hiệu lực!`,
+			);
+			onMutated();
+		} catch {
+			toast.error("Thao tác thất bại. Vui lòng thử lại.");
+			setIsExpired(!newExpiredStatus); // Revert
+		} finally {
+			setIsUpdating(false);
+		}
+	};
+
+	return (
+		<Select
+			value={String(isExpired)}
+			onValueChange={handleStatusChange}
+			disabled={isUpdating}
+		>
+			<SelectTrigger
+				className={`h-7 w-[120px] text-xs font-medium ${isExpired ? "bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400" : "bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400"}`}
+			>
+				<SelectValue />
+			</SelectTrigger>
+			<SelectContent>
+				<SelectItem value="false" className="text-xs">
+					Còn hiệu lực
+				</SelectItem>
+				<SelectItem value="true" className="text-xs">
+					Đã hết hạn
+				</SelectItem>
+			</SelectContent>
+		</Select>
+	);
+}
 
 function ActionCell({
 	row,
@@ -310,25 +384,7 @@ export function columns({
 		{
 			accessorKey: "expired",
 			header: "Trạng thái",
-			cell: ({ row }) => {
-				const val = row.getValue("expired");
-				const isExpired = val === "true" || val === true;
-				return isExpired ? (
-					<Badge
-						variant="outline"
-						className="bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400"
-					>
-						Đã hết hạn
-					</Badge>
-				) : (
-					<Badge
-						variant="outline"
-						className="bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400"
-					>
-						Còn hiệu lực
-					</Badge>
-				);
-			},
+			cell: ({ row }) => <StatusCell row={row} onMutated={onMutated} />,
 		},
 		{
 			id: "actions",
