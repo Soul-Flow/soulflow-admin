@@ -73,41 +73,6 @@ const barChartConfig: ChartConfig = {
 	},
 };
 
-	const metricCards = [
-		{
-			title: "Tổng Doanh Thu",
-			value: formatCurrency(metrics.totalRevenue),
-			change: `${metrics.revenueChangePercentage > 0 ? "+" : ""}${metrics.revenueChangePercentage}% ${getFilterText()}`,
-			icon: DollarSign,
-			iconBg: "bg-emerald-500/10",
-			iconColor: "text-emerald-600",
-		},
-		{
-			title: "Đơn Hàng Mới",
-			value: metrics.newOrders.toString(),
-			change: `${metrics.ordersChangePercentage > 0 ? "+" : ""}${metrics.ordersChangePercentage}% ${getFilterText()}`,
-			icon: ShoppingCart,
-			iconBg: "bg-blue-500/10",
-			iconColor: "text-blue-600",
-		},
-		{
-			title: "Người Dùng Hoạt Động",
-			value: metrics.activeUsers.toString(),
-			change: `${metrics.usersChangePercentage > 0 ? "+" : ""}${metrics.usersChangePercentage}% ${getFilterText()}`,
-			icon: Users,
-			iconBg: "bg-violet-500/10",
-			iconColor: "text-violet-600",
-		},
-		{
-			title: "Tổng Sản Phẩm",
-			value: metrics.totalProducts.toString(),
-			change: `${metrics.newProductsCount > 0 ? "+" : ""}${metrics.newProductsCount} sản phẩm mới`,
-			icon: Package,
-			iconBg: "bg-amber-500/10",
-			iconColor: "text-amber-600",
-		},
-	];
-
 export default function DashboardPage() {
 	const [filter, setFilter] = useState<DashboardFilter>("month");
 	const [startDate, setStartDate] = useState("");
@@ -118,10 +83,9 @@ export default function DashboardPage() {
 	useEffect(() => {
 		// Only fetch automatically if not custom
 		if (filter !== "custom") {
-			// eslint-disable-next-line react-hooks/exhaustive-deps
 			void fetchDashboard({ filter });
 		}
-	}, [filter]);
+	}, [filter, fetchDashboard]);
 
 	if (loading) {
 		return (
@@ -220,7 +184,7 @@ export default function DashboardPage() {
 				<div className="flex flex-col items-end gap-2">
 					<Tabs
 						value={filter}
-						onValueChange={(v: any) => setFilter(v)}
+						onValueChange={(v: string) => setFilter(v as DashboardFilter)}
 						className="w-full lg:w-auto"
 					>
 						<TabsList className="grid w-full grid-cols-3 lg:flex lg:flex-wrap h-auto">
