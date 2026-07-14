@@ -2,12 +2,12 @@
 
 import {
 	type ColumnDef,
+	type ExpandedState,
 	flexRender,
 	getCoreRowModel,
+	getExpandedRowModel,
 	getSortedRowModel,
 	type SortingState,
-	type ExpandedState,
-	getExpandedRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
 import * as React from "react";
@@ -79,27 +79,25 @@ export function DataTable<TData, TValue>({
 						{table.getRowModel().rows?.length ? (
 							table.getRowModel().rows.map((row) => (
 								<React.Fragment key={row.id}>
-								<TableRow
-									data-state={row.getIsSelected() && "selected"}
-								>
-									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id}>
-											{flexRender(
-												cell.column.columnDef.cell,
-												cell.getContext(),
-											)}
-										</TableCell>
-									))}
-								</TableRow>
-								{row.getIsExpanded() && renderSubComponent && (
-									<TableRow>
-										{/* 2nd row is a custom 1 cell row */}
-										<TableCell colSpan={row.getVisibleCells().length}>
-											{renderSubComponent({ row })}
-										</TableCell>
+									<TableRow data-state={row.getIsSelected() && "selected"}>
+										{row.getVisibleCells().map((cell) => (
+											<TableCell key={cell.id}>
+												{flexRender(
+													cell.column.columnDef.cell,
+													cell.getContext(),
+												)}
+											</TableCell>
+										))}
 									</TableRow>
-								)}
-							</React.Fragment>
+									{row.getIsExpanded() && renderSubComponent && (
+										<TableRow>
+											{/* 2nd row is a custom 1 cell row */}
+											<TableCell colSpan={row.getVisibleCells().length}>
+												{renderSubComponent({ row })}
+											</TableCell>
+										</TableRow>
+									)}
+								</React.Fragment>
 							))
 						) : (
 							<TableRow>

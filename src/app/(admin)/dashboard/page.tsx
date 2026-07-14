@@ -46,8 +46,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { DashboardFilter } from "@/services/dashboardService";
 import useDashboardStore from "@/stores/dashboardStore";
-import { type DashboardFilter } from "@/services/dashboardService";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 

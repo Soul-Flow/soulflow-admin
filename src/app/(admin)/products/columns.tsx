@@ -39,6 +39,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	Sheet,
 	SheetContent,
 	SheetDescription,
@@ -66,6 +73,82 @@ type EditFormValues = z.infer<typeof editSchema>;
 interface ImagePreview {
 	file: File;
 	previewUrl: string;
+}
+
+function StatusCell({
+	row,
+	onMutated,
+}: {
+	row: Row<ProductResponse>;
+	onMutated: () => void;
+}) {
+	const product = row.original;
+	const { save } = useProductStore();
+	const [isAvailable, setIsAvailable] = useState<boolean>(
+		product.available === "true" ||
+			product.available === (true as unknown as string),
+	);
+	const [isUpdating, setIsUpdating] = useState(false);
+
+	const handleStatusChange = async (val: string) => {
+		const newStatus = val === "true";
+		setIsAvailable(newStatus);
+		setIsUpdating(true);
+		try {
+			await save(
+				{
+					pk: Number(product.pk),
+					nameVn: product.nameVn,
+					nameEng: product.nameEng,
+					descriptionVn: product.descriptionVn,
+					descriptionEng: product.descriptionEng,
+					price:
+						typeof product.price === "string"
+							? parseFloat(product.price)
+							: product.price,
+					available: newStatus,
+					quantity:
+						typeof product.quantity === "string"
+							? parseInt(product.quantity, 10)
+							: product.quantity,
+					categoryPk: Number(product.categoryPk),
+					customised:
+						product.customised === "true" ||
+						product.customised === (true as unknown as string),
+				},
+				[],
+			);
+			toast.success(`Đã cập nhật trạng thái sản phẩm "${product.nameVn}"!`);
+			onMutated();
+		} catch {
+			toast.error("Cập nhật trạng thái thất bại.");
+			setIsAvailable(!newStatus); // revert
+		} finally {
+			setIsUpdating(false);
+		}
+	};
+
+	return (
+		<Select
+			value={String(isAvailable)}
+			onValueChange={handleStatusChange}
+			disabled={isUpdating}
+		>
+			<SelectTrigger
+				className={`h-7 w-[130px] text-xs font-medium ${isAvailable ? "bg-green-600/15 text-green-700 border-green-600/25 dark:text-green-400" : "bg-slate-500/15 text-slate-700 border-slate-500/25 dark:text-slate-400"}`}
+			>
+				<SelectValue />
+			</SelectTrigger>
+			<SelectContent>
+				<SelectItem value="true" className="text-xs">
+					Kinh doanh
+				</SelectItem>
+				<SelectItem value="false" className="text-xs">
+					Tạm ngưng
+				</SelectItem>
+			</SelectContent>
+		</Select>
+	);
 }
 
 function ActionCell({
@@ -114,7 +197,19 @@ function ActionCell({
 		const files = e.target.files;
 		if (!files || files.length === 0) return;
 
-		const newImages: ImagePreview[] = Array.from(files).map((file) => ({
+		const validFiles = Array.from(files).filter((file) => {
+			if (!file.type.startsWith("image/")) {
+				toast.error(`File "${file.name}" không phải là hình ảnh.`);
+				return false;
+			}
+			if (file.size > 5 * 1024 * 1024) {
+				toast.error(`File "${file.name}" vượt quá 5MB.`);
+				return false;
+			}
+			return true;
+		});
+
+		const newImages: ImagePreview[] = validFiles.map((file) => ({
 			file,
 			previewUrl: URL.createObjectURL(file),
 		}));
@@ -273,96 +368,110 @@ function ActionCell({
 						<SheetTitle>Chi Tiết Sản Phẩm</SheetTitle>
 						<SheetDescription>Mã: {product.code}</SheetDescription>
 					</SheetHeader>
-					<div className="mt-6 space-y-4 text-sm">
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">PK:</span>
-							<span className="col-span-2 font-mono text-xs">{product.pk}</span>
+					<div className="mt-6 px-4 pb-6 space-y-4 text-sm">
+						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">PK:</span>
+								<span className="col-span-2 font-mono text-xs">
+									{product.pk}
+								</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">Tên:</span>
+								<span className="col-span-2 font-medium">{product.nameVn}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Mô tả (VN):
+								</span>
+								<span className="col-span-2 text-muted-foreground">
+									{product.descriptionVn}
+								</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Mô tả (EN):
+								</span>
+								<span className="col-span-2 text-muted-foreground">
+									{product.descriptionEng}
+								</span>
+							</div>
 						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">Tên:</span>
-							<span className="col-span-2 font-medium">{product.nameVn}</span>
+
+						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">Giá:</span>
+								<span className="col-span-2 font-medium text-primary">
+									{formattedAmount}
+								</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Tồn kho:
+								</span>
+								<span className="col-span-2">{product.quantity}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Đã bán:
+								</span>
+								<span className="col-span-2">{product.sales}</span>
+							</div>
 						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Mô tả (VN):
-							</span>
-							<span className="col-span-2 text-muted-foreground">
-								{product.descriptionVn}
-							</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Mô tả (EN):
-							</span>
-							<span className="col-span-2 text-muted-foreground">
-								{product.descriptionEng}
-							</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">Giá:</span>
-							<span className="col-span-2 font-medium">{formattedAmount}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Tồn kho:
-							</span>
-							<span className="col-span-2">{product.quantity}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">Đã bán:</span>
-							<span className="col-span-2">{product.sales}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Ngày tạo:
-							</span>
-							<span className="col-span-2">{product.createdDate}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
-							<span className="font-medium text-muted-foreground">
-								Trạng thái:
-							</span>
-							<span className="col-span-2">
-								{isAvailable ? (
-									<Badge className="bg-green-600 hover:bg-green-700">
-										Kinh doanh
-									</Badge>
-								) : (
-									<Badge variant="secondary">Tạm ngưng</Badge>
-								)}
-							</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Thiết kế tùy chỉnh:
-							</span>
-							<span className="col-span-2">
-								{isCustomised ? "Có" : "Không"}
-							</span>
-						</div>
-						{product.productImageResponses &&
-							product.productImageResponses.length > 0 && (
-								<div className="grid grid-cols-1 gap-2 pb-2">
-									<span className="font-medium text-muted-foreground">
-										Hình ảnh:
-									</span>
-									<div className="grid grid-cols-4 gap-2 pt-1">
-										{product.productImageResponses.map((img, index) => (
-											<div
-												key={img.pk || index}
-												className="group relative aspect-square overflow-hidden rounded-md border"
-											>
-												{/* eslint-disable-next-line @next/next/no-img-element */}
-												<img
-													src={img.url}
-													alt={`Ảnh sản phẩm ${index + 1}`}
-													className="h-full w-full object-cover"
-												/>
-											</div>
-										))}
+
+						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Ngày tạo:
+								</span>
+								<span className="col-span-2">{product.createdDate}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
+								<span className="font-medium text-muted-foreground">
+									Trạng thái:
+								</span>
+								<span className="col-span-2">
+									{isAvailable ? (
+										<Badge className="bg-green-600 hover:bg-green-700">
+											Kinh doanh
+										</Badge>
+									) : (
+										<Badge variant="secondary">Tạm ngưng</Badge>
+									)}
+								</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Thiết kế tùy chỉnh:
+								</span>
+								<span className="col-span-2">
+									{isCustomised ? "Có" : "Không"}
+								</span>
+							</div>
+							{product.productImageResponses &&
+								product.productImageResponses.length > 0 && (
+									<div className="grid grid-cols-1 gap-2 pt-2">
+										<span className="font-medium text-muted-foreground">
+											Hình ảnh:
+										</span>
+										<div className="grid grid-cols-4 gap-2 pt-1">
+											{product.productImageResponses.map((img, index) => (
+												<div
+													key={img.pk || index}
+													className="group relative aspect-square overflow-hidden rounded-md border"
+												>
+													{/* eslint-disable-next-line @next/next/no-img-element */}
+													<img
+														src={img.url}
+														alt={`Ảnh sản phẩm ${index + 1}`}
+														className="h-full w-full object-cover"
+													/>
+												</div>
+											))}
+										</div>
 									</div>
-								</div>
-							)}
+								)}
+						</div>
 					</div>
 				</SheetContent>
 			</Sheet>
@@ -592,15 +701,6 @@ export function columns({
 }): ColumnDef<ProductResponse>[] {
 	return [
 		{
-			accessorKey: "pk",
-			header: "PK",
-			cell: ({ row }) => (
-				<span className="font-mono text-xs font-medium">
-					{row.getValue("pk")}
-				</span>
-			),
-		},
-		{
 			accessorKey: "code",
 			header: "Mã",
 			cell: ({ row }) => (
@@ -612,7 +712,7 @@ export function columns({
 			header: "Tên Sản Phẩm(VN)",
 			cell: ({ row }) => (
 				<div
-					className="max-w-[150px] truncate font-medium"
+					className="max-w-[200px] truncate font-medium"
 					title={row.getValue("nameVn")}
 				>
 					{row.getValue("nameVn")}
@@ -624,34 +724,10 @@ export function columns({
 			header: "Tên Sản Phẩm(EN)",
 			cell: ({ row }) => (
 				<div
-					className="max-w-[150px] truncate font-medium"
+					className="max-w-[200px] truncate font-medium"
 					title={row.getValue("nameEng")}
 				>
 					{row.getValue("nameEng")}
-				</div>
-			),
-		},
-		{
-			accessorKey: "descriptionVn",
-			header: "Mô Tả(VN)",
-			cell: ({ row }) => (
-				<div
-					className="max-w-[150px] truncate text-muted-foreground"
-					title={row.getValue("descriptionVn")}
-				>
-					{row.getValue("descriptionVn")}
-				</div>
-			),
-		},
-		{
-			accessorKey: "descriptionEng",
-			header: "Mô Tả(EN)",
-			cell: ({ row }) => (
-				<div
-					className="max-w-[150px] truncate text-muted-foreground"
-					title={row.getValue("descriptionEng")}
-				>
-					{row.getValue("descriptionEng")}
 				</div>
 			),
 		},
@@ -692,15 +768,7 @@ export function columns({
 		{
 			accessorKey: "available",
 			header: "Trạng thái",
-			cell: ({ row }) => {
-				const val = row.getValue("available");
-				const isAvailable = val === "true" || val === true;
-				return isAvailable ? (
-					<Badge className="bg-green-600 hover:bg-green-700">Kinh doanh</Badge>
-				) : (
-					<Badge variant="secondary">Tạm ngưng</Badge>
-				);
-			},
+			cell: ({ row }) => <StatusCell row={row} onMutated={onMutated} />,
 		},
 		{
 			id: "actions",

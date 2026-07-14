@@ -26,6 +26,8 @@ import type { OrderResponse } from "@/interfaces/responses/order-response.interf
 import useOrderStore from "@/stores/orderStore";
 import { columns } from "./columns";
 
+import { CreateCustomOrderDialog } from "./create-custom-order-dialog";
+
 const PAGE_SIZE_OPTIONS = [5, 10, 20] as const;
 type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 
@@ -136,6 +138,7 @@ function OrdersPageContent() {
 						Theo dõi và cập nhật trạng thái các đơn hàng gần đây.
 					</p>
 				</div>
+				<CreateCustomOrderDialog onCreated={onMutated} />
 			</div>
 
 			<div className="flex flex-col gap-4 mt-6">

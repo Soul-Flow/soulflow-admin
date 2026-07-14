@@ -57,7 +57,7 @@ const useCategoryStore = create<CategoryState>((set, get) => ({
 	deleteByPk: async (pk: number): Promise<void> => {
 		try {
 			set({ loading: true });
-			categoryService.deleteByPk(pk);
+			await categoryService.deleteByPk(pk);
 		} catch (error) {
 			console.log(error);
 			throw error;

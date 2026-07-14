@@ -12,6 +12,11 @@ export const orderService = {
 		return response.data;
 	},
 
+	createCustomOrder: async (request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest): Promise<OrderResponse> => {
+		const response = await api.post<OrderResponse>("/order", request);
+		return response.data;
+	},
+
 	deleteByPk: async (pk: number): Promise<void> => {
 		await api.delete(`/order/${pk}`);
 	},
@@ -57,6 +62,28 @@ export const orderService = {
 			},
 		});
 
+		return response.data;
+	},
+
+	getActiveOrders: async ({
+		keyword = null,
+		sortOrder = SortOrder.ASC,
+		pageNumber = 0,
+		pageSize = 50,
+	}: {
+		keyword?: string | null;
+		sortOrder?: SortOrder;
+		pageNumber?: number;
+		pageSize?: number;
+	} = {}): Promise<PageResponse<OrderResponse>> => {
+		const response = await api.get<PageResponse<OrderResponse>>("/order/active", {
+			params: {
+				keyword,
+				sortOrder,
+				pageNumber,
+				pageSize,
+			},
+		});
 		return response.data;
 	},
 };

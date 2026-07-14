@@ -4,4 +4,6 @@ export interface CategoryRequest {
 	nameEng: string;
 	descriptionVn: string;
 	descriptionEng: string;
+	delIf?: boolean | number;
+	deleted?: boolean;
 }

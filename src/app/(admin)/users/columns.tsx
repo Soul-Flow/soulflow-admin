@@ -25,6 +25,13 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	Sheet,
 	SheetContent,
 	SheetDescription,
@@ -33,6 +40,78 @@ import {
 } from "@/components/ui/sheet";
 import type { AccountResponse } from "@/interfaces/responses/account-response.interface";
 import useAccountStore from "@/stores/accountStore";
+
+function StatusCell({
+	row,
+	onMutated,
+}: {
+	row: Row<AccountResponse>;
+	onMutated: () => void;
+}) {
+	const account = row.original;
+	const { save } = useAccountStore();
+	const [isDisabled, setIsDisabled] = useState<boolean>(
+		account.disabled === "true" ||
+			account.disabled === (true as unknown as string),
+	);
+	const [isUpdating, setIsUpdating] = useState(false);
+
+	const handleStatusChange = async (val: string) => {
+		const newDisabledStatus = val === "true";
+		setIsDisabled(newDisabledStatus);
+		setIsUpdating(true);
+		try {
+			await save(
+				{
+					pk: Number(account.pk),
+					username: account.username,
+					password: null,
+					fullname: account.fullname,
+					email: account.email,
+					photo: account.photo,
+					phone: account.phone,
+					address: account.address,
+					disabled: newDisabledStatus,
+					roleRequest: { code: account.roleResponse?.code ?? "USER" },
+				},
+				new File([], ""),
+			);
+			toast.success(
+				newDisabledStatus
+					? `Đã khóa tài khoản "${account.fullname}" thành công!`
+					: `Đã mở khóa tài khoản "${account.fullname}" thành công!`,
+			);
+			onMutated();
+		} catch {
+			toast.error("Thao tác thất bại. Vui lòng thử lại.");
+			setIsDisabled(!newDisabledStatus); // Revert
+		} finally {
+			setIsUpdating(false);
+		}
+	};
+
+	return (
+		<Select
+			value={String(isDisabled)}
+			onValueChange={handleStatusChange}
+			disabled={isUpdating}
+		>
+			<SelectTrigger
+				className={`h-7 w-[120px] text-xs font-medium ${isDisabled ? "bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400" : "bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400"}`}
+			>
+				<SelectValue />
+			</SelectTrigger>
+			<SelectContent>
+				<SelectItem value="false" className="text-xs">
+					Hoạt động
+				</SelectItem>
+				<SelectItem value="true" className="text-xs">
+					Đã khóa
+				</SelectItem>
+			</SelectContent>
+		</Select>
+	);
+}
 
 function ActionCell({
 	row,
@@ -124,73 +203,78 @@ function ActionCell({
 						<SheetTitle>Chi Tiết Người Dùng</SheetTitle>
 						<SheetDescription>PK: {account.pk}</SheetDescription>
 					</SheetHeader>
-					<div className="mt-6 space-y-4 text-sm">
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">Họ tên:</span>
-							<span className="col-span-2 font-medium">{account.fullname}</span>
+					<div className="mt-6 px-4 pb-6 space-y-4 text-sm">
+						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">Họ tên:</span>
+								<span className="col-span-2 font-medium">{account.fullname}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Username:
+								</span>
+								<span className="col-span-2">{account.username}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">Email:</span>
+								<span className="col-span-2">{account.email}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Điện thoại:
+								</span>
+								<span className="col-span-2">{account.phone}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Địa chỉ:
+								</span>
+								<span className="col-span-2">{account.address}</span>
+							</div>
 						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Username:
-							</span>
-							<span className="col-span-2">{account.username}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">Email:</span>
-							<span className="col-span-2">{account.email}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Điện thoại:
-							</span>
-							<span className="col-span-2">{account.phone}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Địa chỉ:
-							</span>
-							<span className="col-span-2">{account.address}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Ngày tạo:
-							</span>
-							<span className="col-span-2">{account.createdDate}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
-							<span className="font-medium text-muted-foreground">
-								Vai trò:
-							</span>
-							<span className="col-span-2">
-								<Badge
-									variant="outline"
-									className="bg-violet-500/15 text-violet-700 border-violet-500/25 dark:text-violet-400"
-								>
-									{account.roleResponse?.nameVn ?? account.roleResponse?.code}
-								</Badge>
-							</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
-							<span className="font-medium text-muted-foreground">
-								Trạng thái:
-							</span>
-							<span className="col-span-2">
-								{isDisabled ? (
+
+						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Ngày tạo:
+								</span>
+								<span className="col-span-2">{account.createdDate}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
+								<span className="font-medium text-muted-foreground">
+									Vai trò:
+								</span>
+								<span className="col-span-2">
 									<Badge
 										variant="outline"
-										className="bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400"
+										className="bg-violet-500/15 text-violet-700 border-violet-500/25 dark:text-violet-400"
 									>
-										Đã khóa
+										{account.roleResponse?.nameVn ?? account.roleResponse?.code}
 									</Badge>
-								) : (
-									<Badge
-										variant="outline"
-										className="bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400"
-									>
-										Hoạt động
-									</Badge>
-								)}
-							</span>
+								</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
+								<span className="font-medium text-muted-foreground">
+									Trạng thái:
+								</span>
+								<span className="col-span-2">
+									{isDisabled ? (
+										<Badge
+											variant="outline"
+											className="bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400"
+										>
+											Đã khóa
+										</Badge>
+									) : (
+										<Badge
+											variant="outline"
+											className="bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400"
+										>
+											Hoạt động
+										</Badge>
+									)}
+								</span>
+							</div>
 						</div>
 					</div>
 				</SheetContent>
@@ -304,25 +388,7 @@ export function columns({
 		{
 			accessorKey: "disabled",
 			header: "Trạng thái",
-			cell: ({ row }) => {
-				const disabled = row.getValue("disabled");
-				const isDisabled = disabled === "true" || disabled === true;
-				return isDisabled ? (
-					<Badge
-						variant="outline"
-						className="bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400"
-					>
-						Đã khóa
-					</Badge>
-				) : (
-					<Badge
-						variant="outline"
-						className="bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400"
-					>
-						Hoạt động
-					</Badge>
-				);
-			},
+			cell: ({ row }) => <StatusCell row={row} onMutated={onMutated} />,
 		},
 		{
 			id: "actions",

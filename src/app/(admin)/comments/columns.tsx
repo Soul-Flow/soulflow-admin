@@ -1,8 +1,17 @@
 "use client";
 
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Eye, MoreHorizontal, Trash, Pencil, Send, Loader2, ChevronDown, ChevronRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import {
+	ChevronDown,
+	ChevronRight,
+	Eye,
+	Loader2,
+	MoreHorizontal,
+	Pencil,
+	Send,
+	Trash,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -34,8 +43,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { CommentResponse } from "@/interfaces/responses/comment-response.interface";
 import useCommentStore from "@/stores/commentStore";
-import useReplyStore from "@/stores/replyStore";
 import useProductStore from "@/stores/productStore";
+import useReplyStore from "@/stores/replyStore";
 
 function ProductNameRenderer({ pk }: { pk: string }) {
 	const { getByPk } = useProductStore();
@@ -69,7 +78,11 @@ export function CommentExpandedRow({
 }) {
 	const comment = row.original;
 	console.log("DEBUG COMMENT DATA:", comment);
-	const { save: saveReply, deleteByPk: deleteReply, loading: replying } = useReplyStore();
+	const {
+		save: saveReply,
+		deleteByPk: deleteReply,
+		loading: replying,
+	} = useReplyStore();
 	const [replyContent, setReplyContent] = useState("");
 	const [editingReplyPk, setEditingReplyPk] = useState<number | null>(null);
 
@@ -81,7 +94,9 @@ export function CommentExpandedRow({
 				content: replyContent,
 				commentPk: Number(comment.pk),
 			});
-			toast.success(editingReplyPk ? "Cập nhật phản hồi thành công" : "Đã gửi phản hồi");
+			toast.success(
+				editingReplyPk ? "Cập nhật phản hồi thành công" : "Đã gửi phản hồi",
+			);
 			setReplyContent("");
 			setEditingReplyPk(null);
 			onMutated();
@@ -114,21 +129,25 @@ export function CommentExpandedRow({
 	return (
 		<div className="p-4 bg-muted/10 border-b shadow-inner flex flex-col gap-4">
 			<div className="flex flex-col gap-1">
-				<span className="font-semibold text-sm text-foreground">Nội dung bình luận đầy đủ:</span>
-				<p className="text-sm text-muted-foreground whitespace-pre-wrap">{comment.content}</p>
+				<span className="font-semibold text-sm text-foreground">
+					Nội dung bình luận đầy đủ:
+				</span>
+				<p className="text-sm text-muted-foreground whitespace-pre-wrap">
+					{comment.content}
+				</p>
 			</div>
 
 			<div className="flex flex-col gap-3 pt-4 border-t">
 				<span className="font-semibold text-sm flex items-center justify-between">
 					<span>Phản hồi ({comment.replyResponses?.length || 0}):</span>
 				</span>
-				
+
 				{comment.replyResponses?.map((reply) => {
 					const isAdmin = reply.role === "ADMIN";
 					return (
 						<div
 							key={reply.pk}
-							className={`p-3 rounded-md text-sm border-l-4 ${isAdmin ? 'bg-primary/5 border-primary' : 'bg-muted/50 border-muted-foreground/30'}`}
+							className={`p-3 rounded-md text-sm border-l-4 ${isAdmin ? "bg-primary/5 border-primary" : "bg-muted/50 border-muted-foreground/30"}`}
 						>
 							<div className="flex items-center justify-between mb-2">
 								<div className="flex items-center gap-2">
@@ -136,7 +155,10 @@ export function CommentExpandedRow({
 										{reply.fullname || reply.username}
 									</span>
 									{isAdmin && (
-										<Badge variant="destructive" className="text-[10px] h-5 px-1.5">
+										<Badge
+											variant="destructive"
+											className="text-[10px] h-5 px-1.5"
+										>
 											Quản trị viên
 										</Badge>
 									)}
@@ -145,22 +167,36 @@ export function CommentExpandedRow({
 									</span>
 								</div>
 								<div className="flex items-center gap-1">
-									<Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-primary" onClick={() => startEditReply(Number(reply.pk), reply.content)}>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-6 w-6 text-muted-foreground hover:text-primary"
+										onClick={() =>
+											startEditReply(Number(reply.pk), reply.content)
+										}
+									>
 										<Pencil className="h-3 w-3" />
 									</Button>
-									<Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteReply(Number(reply.pk))}>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-6 w-6 text-muted-foreground hover:text-destructive"
+										onClick={() => handleDeleteReply(Number(reply.pk))}
+									>
 										<Trash className="h-3 w-3" />
 									</Button>
 								</div>
 							</div>
-							<p className="text-foreground whitespace-pre-wrap">{reply.content}</p>
+							<p className="text-foreground whitespace-pre-wrap">
+								{reply.content}
+							</p>
 						</div>
 					);
 				})}
 
 				<div className="mt-2 flex flex-col gap-2 max-w-3xl">
-					<Textarea 
-						placeholder="Viết phản hồi..." 
+					<Textarea
+						placeholder="Viết phản hồi..."
 						value={replyContent}
 						onChange={(e) => setReplyContent(e.target.value)}
 						rows={2}
@@ -169,12 +205,25 @@ export function CommentExpandedRow({
 					/>
 					<div className="flex justify-end gap-2">
 						{editingReplyPk && (
-							<Button variant="ghost" size="sm" onClick={cancelEdit} disabled={replying}>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={cancelEdit}
+								disabled={replying}
+							>
 								Hủy
 							</Button>
 						)}
-						<Button size="sm" onClick={handleSaveReply} disabled={replying || !replyContent.trim()}>
-							{replying ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+						<Button
+							size="sm"
+							onClick={handleSaveReply}
+							disabled={replying || !replyContent.trim()}
+						>
+							{replying ? (
+								<Loader2 className="h-4 w-4 animate-spin mr-2" />
+							) : (
+								<Send className="h-4 w-4 mr-2" />
+							)}
 							{editingReplyPk ? "Lưu" : "Gửi phản hồi"}
 						</Button>
 					</div>
@@ -192,7 +241,8 @@ function ActionCell({
 	onMutated: () => void;
 }) {
 	const comment = row.original;
-	const { deleteByPk: deleteComment, loading: deletingComment } = useCommentStore();
+	const { deleteByPk: deleteComment, loading: deletingComment } =
+		useCommentStore();
 	const [showViewSheet, setShowViewSheet] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -241,38 +291,42 @@ function ActionCell({
 						<SheetTitle>Chi Tiết Bình Luận</SheetTitle>
 						<SheetDescription>PK: {comment.pk}</SheetDescription>
 					</SheetHeader>
-					<div className="mt-6 space-y-4 text-sm">
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Người dùng:
-							</span>
-							<span className="col-span-2 font-medium">{comment.fullname}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Username:
-							</span>
-							<span className="col-span-2">{comment.username}</span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Sản phẩm:
-							</span>
-							<span className="col-span-2"><ProductNameRenderer pk={comment.productPk} /></span>
-						</div>
-						<div className="grid grid-cols-3 gap-2 border-b pb-2">
-							<span className="font-medium text-muted-foreground">
-								Ngày đăng:
-							</span>
-							<span className="col-span-2">{comment.createdDate}</span>
-						</div>
-						<div className="flex flex-col gap-2 pt-2">
-							<span className="font-medium text-muted-foreground">
-								Nội dung:
-							</span>
-							<p className="p-3 bg-muted rounded-md text-foreground whitespace-pre-wrap">
-								{comment.content}
-							</p>
+					<div className="mt-6 px-4 pb-6 space-y-4 text-sm">
+						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Người dùng:
+								</span>
+								<span className="col-span-2 font-medium">{comment.fullname}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Username:
+								</span>
+								<span className="col-span-2">{comment.username}</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Sản phẩm:
+								</span>
+								<span className="col-span-2">
+									<ProductNameRenderer pk={comment.productPk} />
+								</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Ngày đăng:
+								</span>
+								<span className="col-span-2">{comment.createdDate}</span>
+							</div>
+							<div className="flex flex-col gap-2 pt-2">
+								<span className="font-medium text-muted-foreground">
+									Nội dung:
+								</span>
+								<p className="p-3 bg-muted rounded-md text-foreground whitespace-pre-wrap">
+									{comment.content}
+								</p>
+							</div>
 						</div>
 					</div>
 				</SheetContent>
@@ -355,7 +409,7 @@ export function columns({
 		{
 			accessorKey: "productPk",
 			header: "Sản phẩm",
-			cell: ({ row }) => <ProductNameRenderer pk={row.getValue("productPk")} />
+			cell: ({ row }) => <ProductNameRenderer pk={row.getValue("productPk")} />,
 		},
 		{
 			accessorKey: "content",

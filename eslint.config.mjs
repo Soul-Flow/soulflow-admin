@@ -10,8 +10,8 @@ const eslintConfig = defineConfig([
 			"react-hooks/set-state-in-effect": "off",
 			"react-hooks/refs": "off",
 			"react-hooks/incompatible-library": "off",
-			"@typescript-eslint/no-explicit-any": "off"
-		}
+			"@typescript-eslint/no-explicit-any": "off",
+		},
 	},
 	// Override default ignores of eslint-config-next.
 	globalIgnores([
