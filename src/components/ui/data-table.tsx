@@ -8,6 +8,8 @@ import {
 	getExpandedRowModel,
 	getSortedRowModel,
 	type SortingState,
+	type ExpandedState,
+	getExpandedRowModel,
 	useReactTable,
 } from "@tanstack/react-table";
 import * as React from "react";
