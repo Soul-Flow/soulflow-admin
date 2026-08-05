@@ -297,7 +297,9 @@ function ActionCell({
 								<span className="font-medium text-muted-foreground">
 									Người dùng:
 								</span>
-								<span className="col-span-2 font-medium">{comment.fullname}</span>
+								<span className="col-span-2 font-medium">
+									{comment.fullname}
+								</span>
 							</div>
 							<div className="grid grid-cols-3 gap-2 border-b pb-2">
 								<span className="font-medium text-muted-foreground">

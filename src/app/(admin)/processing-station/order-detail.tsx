@@ -1,8 +1,18 @@
 "use client";
 
+import { PackageOpen, Trash2, XCircle } from "lucide-react";
 import { useState } from "react";
-import { OrderStatus } from "@/enums/order-status.enum";
-import type { OrderResponse } from "@/interfaces/responses/order-response.interface";
+import { toast } from "sonner";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,19 +30,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { OrderStatus } from "@/enums/order-status.enum";
+import type { OrderResponse } from "@/interfaces/responses/order-response.interface";
 import useOrderStore from "@/stores/orderStore";
-import { toast } from "sonner";
-import { PackageOpen, XCircle, Trash2 } from "lucide-react";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
 	[OrderStatus.PENDING]: {
@@ -112,9 +112,11 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 				accountPk: Number(order.accountPk),
 				orderDetailRequests: [],
 			});
-			
-			toast.success(`Đã cập nhật trạng thái đơn hàng ${order.code} thành ${statusConfig[pendingStatus]?.label || pendingStatus}`);
-			
+
+			toast.success(
+				`Đã cập nhật trạng thái đơn hàng ${order.code} thành ${statusConfig[pendingStatus]?.label || pendingStatus}`,
+			);
+
 			// If delivered or cancelled, tell parent to remove it from list
 			onStatusUpdated();
 		} catch {
@@ -157,14 +159,20 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 			{/* Header Actions */}
 			<div className="flex items-center justify-between p-5 border-b bg-card rounded-t-xl shadow-sm">
 				<div>
-					<h2 className="text-xl font-bold tracking-tight">Chi tiết đơn {order.code}</h2>
+					<h2 className="text-xl font-bold tracking-tight">
+						Chi tiết đơn {order.code}
+					</h2>
 					<p className="text-sm text-muted-foreground mt-1">
 						Ngày đặt: {order.createdDate}
 					</p>
 				</div>
 				<div className="flex items-center gap-3">
 					{/* Complete Order Button (Only visible if PAID or later) */}
-					{[OrderStatus.PAID, OrderStatus.PROCESSING, OrderStatus.SHIPPED].includes(order.status as OrderStatus) && (
+					{[
+						OrderStatus.PAID,
+						OrderStatus.PROCESSING,
+						OrderStatus.SHIPPED,
+					].includes(order.status as OrderStatus) && (
 						<Button
 							variant="default"
 							size="sm"
@@ -231,21 +239,31 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 					{/* Customer Info */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-4">
-							<h3 className="font-semibold text-lg border-b pb-2">Thông tin khách hàng</h3>
+							<h3 className="font-semibold text-lg border-b pb-2">
+								Thông tin khách hàng
+							</h3>
 							<div className="grid grid-cols-3 gap-2">
-								<span className="font-medium text-muted-foreground text-sm">Khách hàng:</span>
+								<span className="font-medium text-muted-foreground text-sm">
+									Khách hàng:
+								</span>
 								<span className="col-span-2 font-medium">{order.fullname}</span>
 							</div>
 							<div className="grid grid-cols-3 gap-2">
-								<span className="font-medium text-muted-foreground text-sm">Điện thoại:</span>
+								<span className="font-medium text-muted-foreground text-sm">
+									Điện thoại:
+								</span>
 								<span className="col-span-2">{order.phone}</span>
 							</div>
 							<div className="grid grid-cols-3 gap-2">
-								<span className="font-medium text-muted-foreground text-sm">Địa chỉ:</span>
+								<span className="font-medium text-muted-foreground text-sm">
+									Địa chỉ:
+								</span>
 								<span className="col-span-2">{order.address}</span>
 							</div>
 							<div className="grid grid-cols-3 gap-2 items-center">
-								<span className="font-medium text-muted-foreground text-sm">Trạng thái:</span>
+								<span className="font-medium text-muted-foreground text-sm">
+									Trạng thái:
+								</span>
 								<span className="col-span-2">
 									<Badge variant="outline" className={statusInfo.className}>
 										{statusInfo.label}
@@ -255,32 +273,68 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 						</div>
 
 						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-4">
-							<h3 className="font-semibold text-lg border-b pb-2">Thông tin thanh toán</h3>
+							<h3 className="font-semibold text-lg border-b pb-2">
+								Thông tin thanh toán
+							</h3>
 							<div className="grid grid-cols-3 gap-2">
-								<span className="font-medium text-muted-foreground text-sm">Thanh toán:</span>
+								<span className="font-medium text-muted-foreground text-sm">
+									Thanh toán:
+								</span>
 								<span className="col-span-2 uppercase font-medium">
-									<Badge variant="outline">{order.paymentMethod || "COD"}</Badge>
+									<Badge variant="outline">
+										{order.paymentMethod || "COD"}
+									</Badge>
 								</span>
 							</div>
 							<div className="grid grid-cols-3 gap-2">
-								<span className="font-medium text-muted-foreground text-sm">Tạm tính:</span>
-								<span className="col-span-2">{formatCurrency(parseFloat(order.total) - parseFloat(order.shippingFee || "0"))}</span>
+								<span className="font-medium text-muted-foreground text-sm">
+									Tạm tính:
+								</span>
+								<span className="col-span-2">
+									{formatCurrency(
+										parseFloat(order.total) -
+											parseFloat(order.shippingFee || "0") +
+											parseFloat(order.discountAmount?.toString() || "0"),
+									)}
+								</span>
 							</div>
+							{(order.discountAmount || 0) > 0 && (
+								<div className="grid grid-cols-3 gap-2">
+									<span className="font-medium text-muted-foreground text-sm">
+										Khuyến mãi:
+									</span>
+									<span className="col-span-2 font-medium text-green-600 dark:text-green-400">
+										{order.discountCode ? `[${order.discountCode}] ` : ""}
+										-{formatCurrency(order.discountAmount.toString())}
+									</span>
+								</div>
+							)}
 							<div className="grid grid-cols-3 gap-2">
-								<span className="font-medium text-muted-foreground text-sm">Phí ship:</span>
-								<span className="col-span-2">{formatCurrency(order.shippingFee)}</span>
+								<span className="font-medium text-muted-foreground text-sm">
+									Phí ship:
+								</span>
+								<span className="col-span-2">
+									{formatCurrency(order.shippingFee)}
+								</span>
 							</div>
 							<div className="grid grid-cols-3 gap-2 pt-2 border-t mt-2">
-								<span className="font-medium text-muted-foreground text-sm">Tổng cộng:</span>
-								<span className="col-span-2 font-bold text-primary text-lg">{formatCurrency(order.total)}</span>
+								<span className="font-medium text-muted-foreground text-sm">
+									Tổng cộng:
+								</span>
+								<span className="col-span-2 font-bold text-primary text-lg">
+									{formatCurrency(order.total)}
+								</span>
 							</div>
 						</div>
 					</div>
 
 					{/* Order Items */}
 					<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm">
-						<h3 className="font-semibold text-lg border-b pb-4 mb-4">Sản phẩm đã đặt</h3>
-						{order.orderDetailResponses && order.orderDetailResponses.length > 0 ? (
+						<h3 className="font-semibold text-lg border-b pb-4 mb-4">
+							Sản phẩm đã đặt
+						</h3>
+						{order.orderDetailResponses &&
+						order.orderDetailResponses.length > 0 ? (
 							<Table>
 								<TableHeader>
 									<TableRow>
@@ -295,13 +349,21 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 										const name = item.name || "Sản phẩm";
 										const price = parseFloat(item.price || "0");
 										const qty = parseInt(item.quantity || "1", 10);
-										const total = parseFloat(item.subtotal || (price * qty).toString());
+										const total = parseFloat(
+											item.subtotal || (price * qty).toString(),
+										);
 										return (
-											<TableRow key={index}>
+											<TableRow key={`detail-item-${index}`}>
 												<TableCell className="font-medium">{name}</TableCell>
-												<TableCell className="text-right text-muted-foreground">{formatCurrency(price)}</TableCell>
-												<TableCell className="text-center font-medium">{qty}</TableCell>
-												<TableCell className="text-right text-primary font-medium">{formatCurrency(total)}</TableCell>
+												<TableCell className="text-right text-muted-foreground">
+													{formatCurrency(price)}
+												</TableCell>
+												<TableCell className="text-center font-medium">
+													{qty}
+												</TableCell>
+												<TableCell className="text-right text-primary font-medium">
+													{formatCurrency(total)}
+												</TableCell>
 											</TableRow>
 										);
 									})}
@@ -321,8 +383,10 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 					<AlertDialogHeader>
 						<AlertDialogTitle>Xác nhận xóa vĩnh viễn đơn hàng</AlertDialogTitle>
 						<AlertDialogDescription>
-							Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng <strong>{order.code}</strong>{" "}
-							của khách hàng <strong>{order.fullname}</strong> không? Hành động này sẽ xóa dữ liệu khỏi hệ thống và không thể hoàn tác.
+							Bạn có chắc chắn muốn xóa vĩnh viễn đơn hàng{" "}
+							<strong>{order.code}</strong> của khách hàng{" "}
+							<strong>{order.fullname}</strong> không? Hành động này sẽ xóa dữ
+							liệu khỏi hệ thống và không thể hoàn tác.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -343,21 +407,31 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 					<AlertDialogHeader>
 						<AlertDialogTitle>Xác nhận thay đổi trạng thái</AlertDialogTitle>
 						<AlertDialogDescription>
-							Bạn có chắc chắn muốn chuyển trạng thái đơn hàng <strong>{order.code}</strong>{" "}
-							sang <strong>{pendingStatus ? statusConfig[pendingStatus]?.label || pendingStatus : ""}</strong> không?
-							{pendingStatus === OrderStatus.CANCELLED && " Hành động này sẽ hủy đơn hàng."}
-							{pendingStatus === OrderStatus.DELIVERED && " Hành động này sẽ hoàn tất đơn hàng."}
+							Bạn có chắc chắn muốn chuyển trạng thái đơn hàng{" "}
+							<strong>{order.code}</strong> sang{" "}
+							<strong>
+								{pendingStatus
+									? statusConfig[pendingStatus]?.label || pendingStatus
+									: ""}
+							</strong>{" "}
+							không?
+							{pendingStatus === OrderStatus.CANCELLED &&
+								" Hành động này sẽ hủy đơn hàng."}
+							{pendingStatus === OrderStatus.DELIVERED &&
+								" Hành động này sẽ hoàn tất đơn hàng."}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
-						<AlertDialogCancel onClick={() => setPendingStatus(null)}>Không</AlertDialogCancel>
+						<AlertDialogCancel onClick={() => setPendingStatus(null)}>
+							Không
+						</AlertDialogCancel>
 						<AlertDialogAction
 							className={
 								pendingStatus === OrderStatus.CANCELLED
 									? "bg-red-600 hover:bg-red-700 text-white"
 									: pendingStatus === OrderStatus.DELIVERED
-									? "bg-emerald-600 hover:bg-emerald-700 text-white"
-									: ""
+										? "bg-emerald-600 hover:bg-emerald-700 text-white"
+										: ""
 							}
 							onClick={confirmStatusChange}
 							disabled={isUpdating}

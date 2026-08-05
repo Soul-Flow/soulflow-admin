@@ -16,7 +16,6 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -26,7 +25,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 import useAccountStore from "@/stores/accountStore";
@@ -82,7 +80,10 @@ export default function AdminLayout({
 								<Home className="h-4 w-4" />
 								Dashboard
 							</Link>
-							<Link href="/processing-station" className={linkClass("/processing-station")}>
+							<Link
+								href="/processing-station"
+								className={linkClass("/processing-station")}
+							>
 								<Package className="h-4 w-4" />
 								Trạm xử lý
 							</Link>
@@ -184,7 +185,7 @@ export default function AdminLayout({
 							) : (
 								notifications.map((notif, index) => (
 									<DropdownMenuItem
-										key={index}
+										key={`${notif.referenceId}-${index}`}
 										className="cursor-pointer flex flex-col items-start gap-1 p-3"
 										onSelect={() => {
 											if (

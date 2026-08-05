@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Eye, MoreHorizontal, RefreshCcw, Trash } from "lucide-react";
+import { Eye, MoreHorizontal, Trash } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -18,14 +18,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -33,7 +25,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -278,12 +269,33 @@ function ActionCell({
 						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
 							<div className="grid grid-cols-3 gap-2 border-b pb-2">
 								<span className="font-medium text-muted-foreground">
-									Tổng tiền:
+									Tạm tính:
 								</span>
-								<span className="col-span-2 font-medium text-primary">
-									{formattedTotal}
+								<span className="col-span-2 font-medium">
+									{new Intl.NumberFormat("vi-VN", {
+										style: "currency",
+										currency: "VND",
+									}).format(
+										totalNum - 
+										parseFloat(order.shippingFee || "0") + 
+										parseFloat(order.discountAmount?.toString() || "0")
+									)}
 								</span>
 							</div>
+							{(order.discountAmount || 0) > 0 && (
+								<div className="grid grid-cols-3 gap-2 border-b pb-2">
+									<span className="font-medium text-muted-foreground">
+										Khuyến mãi:
+									</span>
+									<span className="col-span-2 font-medium text-green-600 dark:text-green-400">
+										{order.discountCode ? `[${order.discountCode}] ` : ""}
+										-{new Intl.NumberFormat("vi-VN", {
+											style: "currency",
+											currency: "VND",
+										}).format(order.discountAmount)}
+									</span>
+								</div>
+							)}
 							<div className="grid grid-cols-3 gap-2 border-b pb-2">
 								<span className="font-medium text-muted-foreground">
 									Phí ship:
@@ -293,6 +305,14 @@ function ActionCell({
 										style: "currency",
 										currency: "VND",
 									}).format(parseFloat(order.shippingFee || "0"))}
+								</span>
+							</div>
+							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+								<span className="font-medium text-muted-foreground">
+									Tổng tiền:
+								</span>
+								<span className="col-span-2 font-medium text-primary">
+									{formattedTotal}
 								</span>
 							</div>
 							<div className="grid grid-cols-3 gap-2 border-b pb-2">
@@ -319,8 +339,11 @@ function ActionCell({
 
 						{/* Order Items */}
 						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm">
-							<h3 className="font-semibold text-lg border-b pb-4 mb-4">Sản phẩm đã đặt</h3>
-							{order.orderDetailResponses && order.orderDetailResponses.length > 0 ? (
+							<h3 className="font-semibold text-lg border-b pb-4 mb-4">
+								Sản phẩm đã đặt
+							</h3>
+							{order.orderDetailResponses &&
+							order.orderDetailResponses.length > 0 ? (
 								<Table>
 									<TableHeader>
 										<TableRow>
@@ -335,19 +358,28 @@ function ActionCell({
 											const name = item.name || "Sản phẩm";
 											const price = parseFloat(item.price || "0");
 											const qty = parseInt(item.quantity || "1", 10);
-											const total = parseFloat(item.subtotal || (price * qty).toString());
-											
-											const formatCurrency = (val: number) => new Intl.NumberFormat("vi-VN", {
-												style: "currency",
-												currency: "VND",
-											}).format(val);
+											const total = parseFloat(
+												item.subtotal || (price * qty).toString(),
+											);
+
+											const formatCurrency = (val: number) =>
+												new Intl.NumberFormat("vi-VN", {
+													style: "currency",
+													currency: "VND",
+												}).format(val);
 
 											return (
-												<TableRow key={index}>
+												<TableRow key={`order-item-${index}`}>
 													<TableCell className="font-medium">{name}</TableCell>
-													<TableCell className="text-right text-muted-foreground">{formatCurrency(price)}</TableCell>
-													<TableCell className="text-center font-medium">{qty}</TableCell>
-													<TableCell className="text-right text-primary font-medium">{formatCurrency(total)}</TableCell>
+													<TableCell className="text-right text-muted-foreground">
+														{formatCurrency(price)}
+													</TableCell>
+													<TableCell className="text-center font-medium">
+														{qty}
+													</TableCell>
+													<TableCell className="text-right text-primary font-medium">
+														{formatCurrency(total)}
+													</TableCell>
 												</TableRow>
 											);
 										})}

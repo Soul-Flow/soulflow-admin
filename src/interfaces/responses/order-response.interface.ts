@@ -25,5 +25,9 @@ export interface OrderResponse {
 
 	accountPk: string;
 
+	discountCode: string | null;
+
+	discountAmount: number;
+
 	orderDetailResponses: OrderDetailResponse[];
 }

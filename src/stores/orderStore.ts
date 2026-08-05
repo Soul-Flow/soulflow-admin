@@ -13,7 +13,9 @@ interface OrderState {
 
 	save: (request: OrderRequest) => Promise<OrderResponse | undefined>;
 
-	createCustomOrder: (request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest) => Promise<OrderResponse | undefined>;
+	createCustomOrder: (
+		request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest,
+	) => Promise<OrderResponse | undefined>;
 
 	deleteByPk: (pk: number) => Promise<void>;
 
@@ -83,7 +85,9 @@ const useOrderStore = create<OrderState>((set, get) => ({
 		}
 	},
 
-	createCustomOrder: async (request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest) => {
+	createCustomOrder: async (
+		request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest,
+	) => {
 		try {
 			set({ loading: true });
 			const response = await orderService.createCustomOrder(request);

@@ -57,7 +57,9 @@ export const accountService = {
 	},
 
 	findByUsername: async (username: string): Promise<AccountResponse> => {
-		const response = await api.get<AccountResponse>(`/account/by-username/${username}`);
+		const response = await api.get<AccountResponse>(
+			`/account/by-username/${username}`,
+		);
 		return response.data;
 	},
 

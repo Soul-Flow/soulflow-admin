@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { Edit, MoreHorizontal, Trash } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -17,7 +17,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -52,6 +51,8 @@ const editSchema = z.object({
 	descriptionVn: z.string().min(1, "Mô tả là bắt buộc"),
 	descriptionEng: z.string().optional(),
 	percentage: z.number({ message: "Phần trăm phải là số" }).min(1).max(100),
+	minOrderAmount: z.number({ message: "Bắt buộc nhập và phải là số" }).min(0, "Không được nhỏ hơn 0"),
+	usageLimit: z.number({ message: "Bắt buộc nhập và phải là số" }).min(1, "Tối thiểu 1 lượt"),
 	expiredDate: z.string().min(1, "Ngày hết hạn là bắt buộc"),
 });
 
@@ -72,19 +73,37 @@ function StatusCell({
 	);
 	const [isUpdating, setIsUpdating] = useState(false);
 
+	useEffect(() => {
+		setIsExpired(
+			discount.expired === "true" ||
+				discount.expired === (true as unknown as string),
+		);
+	}, [discount.expired]);
+
 	const handleStatusChange = async (val: string) => {
 		const newExpiredStatus = val === "true";
 		setIsExpired(newExpiredStatus);
 		setIsUpdating(true);
 		try {
+			// Backend cần LocalDateTime nên phải thêm giờ vào cuối chuỗi YYYY-MM-DD
+			let formattedExpiredDate = discount.expiredDate;
+			if (formattedExpiredDate && formattedExpiredDate.length > 10 && !formattedExpiredDate.includes("T")) {
+				// Trường hợp ngày tháng lấy từ backend xuống là dd-MM-yyyy HH:mm:ss
+				const parts = formattedExpiredDate.split(" ");
+				if (parts.length === 2) {
+					const dateParts = parts[0].split("-");
+					if (dateParts.length === 3) {
+						formattedExpiredDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${parts[1]}`;
+					}
+				}
+			}
+
 			await save({
 				pk: Number(discount.pk),
 				percentage: parseFloat(discount.percentage),
 				descriptionVn: discount.description,
 				descriptionEng: discount.description,
-				expiredDate: discount.expiredDate,
-				// NOTE: backend needs to support an 'expired' boolean parameter if we want to toggle it manually,
-				// or maybe we just pass what we have and toggle. For now we assume updating save works.
+				expiredDate: formattedExpiredDate,
 				productRequests: [],
 			});
 			toast.success(
@@ -153,18 +172,38 @@ function ActionCell({
 			descriptionVn: discount.description,
 			descriptionEng: discount.description,
 			percentage: percentageNum,
+			minOrderAmount: discount.minOrderAmount ? parseFloat(discount.minOrderAmount) : 0,
+			usageLimit: discount.usageLimit ? parseInt(discount.usageLimit) : 999999,
 			expiredDate: discount.expiredDate,
 		},
 	});
 
 	const handleEdit = async (data: EditFormValues) => {
 		try {
+			// Backend cần LocalDateTime nên phải thêm giờ vào cuối chuỗi YYYY-MM-DD
+			let formattedExpiredDate = data.expiredDate;
+			if (formattedExpiredDate && formattedExpiredDate.length === 10) {
+				formattedExpiredDate = `${formattedExpiredDate}T23:59:59`;
+			} else if (formattedExpiredDate && formattedExpiredDate.length > 10 && !formattedExpiredDate.includes("T")) {
+				// Trường hợp ngày tháng lấy từ backend xuống là dd-MM-yyyy HH:mm:ss
+				const parts = formattedExpiredDate.split(" ");
+				if (parts.length === 2) {
+					const dateParts = parts[0].split("-");
+					if (dateParts.length === 3) {
+						formattedExpiredDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${parts[1]}`;
+					}
+				}
+			}
+
 			await save({
 				pk: Number(discount.pk),
+				code: data.code,
 				percentage: data.percentage,
+				minOrderAmount: data.minOrderAmount,
+				usageLimit: data.usageLimit,
 				descriptionVn: data.descriptionVn,
 				descriptionEng: data.descriptionEng ?? data.descriptionVn,
-				expiredDate: data.expiredDate,
+				expiredDate: formattedExpiredDate,
 				productRequests: [],
 			});
 			toast.success(`Đã cập nhật mã giảm giá "${discount.code}" thành công!`);
@@ -269,6 +308,32 @@ function ActionCell({
 								)}
 							</div>
 							<div className="grid gap-2">
+								<Label>Đơn tối thiểu (VNĐ) *</Label>
+								<Input
+									type="number"
+									{...register("minOrderAmount", { valueAsNumber: true })}
+									aria-invalid={!!errors.minOrderAmount}
+								/>
+								{errors.minOrderAmount && (
+									<p className="text-xs text-destructive">
+										{errors.minOrderAmount.message}
+									</p>
+								)}
+							</div>
+							<div className="grid gap-2">
+								<Label>Số lượt dùng tối đa *</Label>
+								<Input
+									type="number"
+									{...register("usageLimit", { valueAsNumber: true })}
+									aria-invalid={!!errors.usageLimit}
+								/>
+								{errors.usageLimit && (
+									<p className="text-xs text-destructive">
+										{errors.usageLimit.message}
+									</p>
+								)}
+							</div>
+							<div className="grid gap-2">
 								<Label>Ngày hết hạn</Label>
 								<Input
 									type="date"
@@ -362,6 +427,38 @@ export function columns({
 					{parseFloat(row.getValue("percentage"))}%
 				</span>
 			),
+		},
+		{
+			accessorKey: "minOrderAmount",
+			header: "Đơn tối thiểu",
+			cell: ({ row }) => {
+				const minOrder = row.original.minOrderAmount;
+				return minOrder ? (
+					<span className="font-medium">
+						{new Intl.NumberFormat("vi-VN", {
+							style: "currency",
+							currency: "VND",
+						}).format(parseFloat(minOrder))}
+					</span>
+				) : (
+					<span className="text-muted-foreground">-</span>
+				);
+			},
+		},
+		{
+			id: "usage",
+			header: "Lượt dùng",
+			cell: ({ row }) => {
+				const limit = row.original.usageLimit;
+				const current = row.original.currentUsage || "0";
+				return limit ? (
+					<span className="font-medium">
+						{current} / {limit}
+					</span>
+				) : (
+					<span className="text-muted-foreground">Không giới hạn</span>
+				);
+			},
 		},
 		{
 			accessorKey: "createdDate",

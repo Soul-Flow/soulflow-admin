@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Edit, MoreHorizontal, Trash, RotateCcw } from "lucide-react";
+import { Edit, MoreHorizontal, RotateCcw, Trash } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -327,7 +327,13 @@ export function columns({
 		{
 			id: "actions",
 			header: () => <span className="sr-only">Hành động</span>,
-			cell: ({ row }) => <ActionCell row={row} onMutated={onMutated} isDeletedList={isDeletedList} />,
+			cell: ({ row }) => (
+				<ActionCell
+					row={row}
+					onMutated={onMutated}
+					isDeletedList={isDeletedList}
+				/>
+			),
 		},
 	];
 }

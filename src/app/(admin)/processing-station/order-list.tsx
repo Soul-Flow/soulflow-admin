@@ -1,10 +1,10 @@
 "use client";
 
-import { OrderStatus } from "@/enums/order-status.enum";
-import type { OrderResponse } from "@/interfaces/responses/order-response.interface";
+import { Clock, Package, Phone, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Clock, Phone, User, Package } from "lucide-react";
+import { OrderStatus } from "@/enums/order-status.enum";
+import type { OrderResponse } from "@/interfaces/responses/order-response.interface";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
 	[OrderStatus.PENDING]: {

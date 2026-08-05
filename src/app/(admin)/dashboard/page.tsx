@@ -88,7 +88,7 @@ export default function DashboardPage() {
 			// eslint-disable-next-line react-hooks/exhaustive-deps
 			void fetchDashboard({ filter });
 		}
-	}, [filter]);
+	}, [filter, fetchDashboard]);
 
 	if (loading) {
 		return (
