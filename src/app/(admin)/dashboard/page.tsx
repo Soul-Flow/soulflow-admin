@@ -46,7 +46,12 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { DashboardFilter } from "@/services/dashboardService";
+import {
+	type DashboardFilter,
+	getRevenueReport,
+	type RevenueReportItem,
+	type RevenueReportType,
+} from "@/services/dashboardService";
 import useDashboardStore from "@/stores/dashboardStore";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
@@ -73,12 +78,22 @@ const barChartConfig: ChartConfig = {
 	},
 };
 
+const currentYear = new Date().getFullYear();
+const revenueStartMinDate = `${currentYear - 5}-01-01`;
+const currentYearEndDate = `${currentYear}-12-31`;
+
 // ─── Page Component ─────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
 	const [filter, setFilter] = useState<DashboardFilter>("month");
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
+	const [revenueType, setRevenueType] = useState<RevenueReportType>("MONTH");
+	const [revenueStartDate, setRevenueStartDate] = useState("");
+	const [revenueEndDate, setRevenueEndDate] = useState("");
+	const [revenueReport, setRevenueReport] = useState<RevenueReportItem[]>([]);
+	const [revenueLoading, setRevenueLoading] = useState(false);
+	const [revenueError, setRevenueError] = useState<string | null>(null);
 
 	const { data, loading, error, fetchDashboard } = useDashboardStore();
 
@@ -89,6 +104,35 @@ export default function DashboardPage() {
 			void fetchDashboard({ filter });
 		}
 	}, [filter, fetchDashboard]);
+
+	const fetchRevenueReport = async () => {
+		if (
+			!revenueStartDate ||
+			!revenueEndDate ||
+			revenueStartDate > revenueEndDate
+		) {
+			setRevenueError("Vui lòng chọn khoảng ngày hợp lệ.");
+			return;
+		}
+
+		setRevenueLoading(true);
+		setRevenueError(null);
+		try {
+			const report = await getRevenueReport({
+				startDate: revenueStartDate,
+				endDate: revenueEndDate,
+				type: revenueType,
+			});
+			setRevenueReport(report);
+		} catch (requestError: any) {
+			setRevenueError(
+				requestError.response?.data?.message ||
+					"Không thể tải báo cáo doanh thu.",
+			);
+		} finally {
+			setRevenueLoading(false);
+		}
+	};
 
 	if (loading) {
 		return (
@@ -112,13 +156,8 @@ export default function DashboardPage() {
 		);
 	}
 
-	const {
-		metrics,
-		revenueByMonth,
-		revenueByCategory,
-		topSellingProducts,
-		lowStockProducts,
-	} = data;
+	const { metrics, revenueByCategory, topSellingProducts, lowStockProducts } =
+		data;
 
 	const getFilterText = () => {
 		if (filter === "today") return "so với hôm qua";
@@ -260,40 +299,106 @@ export default function DashboardPage() {
 
 			{/* ── 2. Charts ───────────────────────────────────────────────────── */}
 			<div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
-				{/* Bar Chart — Monthly Revenue */}
+				{/* Bar Chart — Revenue report */}
 				<Card className="lg:col-span-4">
-					<CardHeader>
-						<CardTitle>Doanh thu theo tháng</CardTitle>
-						<CardDescription>
-							Tổng doanh thu từ tháng 1 đến tháng 12 năm nay
-						</CardDescription>
+					<CardHeader className="gap-4">
+						<div>
+							<CardTitle>
+								Doanh thu theo{" "}
+								{revenueType === "MONTH"
+									? "tháng"
+									: revenueType === "QUARTER"
+										? "quý"
+										: "năm"}
+							</CardTitle>
+							<CardDescription>
+								Chọn loại báo cáo và khoảng thời gian để xem doanh thu đơn đã
+								giao.
+							</CardDescription>
+						</div>
+						<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+							<select
+								value={revenueType}
+								onChange={(event) =>
+									setRevenueType(event.target.value as RevenueReportType)
+								}
+								className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+								aria-label="Loại báo cáo doanh thu"
+							>
+								<option value="MONTH">Theo tháng</option>
+								<option value="QUARTER">Theo quý</option>
+								<option value="YEAR">Theo năm</option>
+							</select>
+							<input
+								type="date"
+								value={revenueStartDate}
+								min={revenueStartMinDate}
+								max={revenueEndDate || currentYearEndDate}
+								onChange={(event) => setRevenueStartDate(event.target.value)}
+								className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+								aria-label="Ngày bắt đầu báo cáo doanh thu"
+							/>
+							<input
+								type="date"
+								value={revenueEndDate}
+								min={revenueStartDate || revenueStartMinDate}
+								max={currentYearEndDate}
+								onChange={(event) => setRevenueEndDate(event.target.value)}
+								className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+								aria-label="Ngày kết thúc báo cáo doanh thu"
+							/>
+							<Button
+								size="sm"
+								onClick={() => void fetchRevenueReport()}
+								disabled={
+									revenueLoading || !revenueStartDate || !revenueEndDate
+								}
+							>
+								{revenueLoading && (
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+								)}
+								Áp dụng
+							</Button>
+						</div>
 					</CardHeader>
 					<CardContent>
-						<ChartContainer config={barChartConfig} className="min-h-75 w-full">
-							<BarChart data={revenueByMonth}>
-								<CartesianGrid vertical={false} />
-								<XAxis
-									dataKey="month"
-									tickLine={false}
-									axisLine={false}
-									tickMargin={8}
-								/>
-								<YAxis
-									tickLine={false}
-									axisLine={false}
-									tickMargin={8}
-									tickFormatter={(value: number) =>
-										`${(value / 1_000_000).toFixed(0)}M`
-									}
-								/>
-								<ChartTooltip content={<ChartTooltipContent />} />
-								<Bar
-									dataKey="revenue"
-									fill="var(--color-revenue)"
-									radius={[4, 4, 0, 0]}
-								/>
-							</BarChart>
-						</ChartContainer>
+						{revenueError && (
+							<p className="mb-3 text-sm text-destructive">{revenueError}</p>
+						)}
+						{!revenueLoading && revenueReport.length === 0 ? (
+							<div className="flex min-h-75 items-center justify-center text-sm text-muted-foreground">
+								Chọn khoảng ngày rồi nhấn Áp dụng để tải biểu đồ.
+							</div>
+						) : (
+							<ChartContainer
+								config={barChartConfig}
+								className="min-h-75 w-full"
+							>
+								<BarChart data={revenueReport}>
+									<CartesianGrid vertical={false} />
+									<XAxis
+										dataKey="label"
+										tickLine={false}
+										axisLine={false}
+										tickMargin={8}
+									/>
+									<YAxis
+										tickLine={false}
+										axisLine={false}
+										tickMargin={8}
+										tickFormatter={(value: number) =>
+											`${(value / 1_000_000).toFixed(0)}M`
+										}
+									/>
+									<ChartTooltip content={<ChartTooltipContent />} />
+									<Bar
+										dataKey="revenue"
+										fill="var(--color-revenue)"
+										radius={[4, 4, 0, 0]}
+									/>
+								</BarChart>
+							</ChartContainer>
+						)}
 					</CardContent>
 				</Card>
 

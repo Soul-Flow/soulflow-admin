@@ -16,6 +16,23 @@ export interface RevenueByMonth {
 	revenue: number;
 }
 
+export type RevenueReportType = "MONTH" | "QUARTER" | "YEAR";
+
+export interface RevenueReportItem {
+	yearValue: number;
+	monthValue: number | null;
+	quarterValue: number | null;
+	label: string;
+	orderCount: number;
+	revenue: number;
+}
+
+export interface RevenueReportQueryParams {
+	startDate: string;
+	endDate: string;
+	type: RevenueReportType;
+}
+
 export interface RevenueByCategory {
 	name: string;
 	value: number;
@@ -74,4 +91,13 @@ export const getDashboardSummary = async (
 		},
 	});
 	return response.data.data;
+};
+
+export const getRevenueReport = async (
+	params: RevenueReportQueryParams,
+): Promise<RevenueReportItem[]> => {
+	const response = await api.get<RevenueReportItem[]>("/revenue-report", {
+		params,
+	});
+	return response.data;
 };
