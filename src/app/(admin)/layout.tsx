@@ -85,7 +85,7 @@ export default function AdminLayout({
 								className={linkClass("/processing-station")}
 							>
 								<Package className="h-4 w-4" />
-								Trạm xử lý
+								Xử lý đơn hàng
 							</Link>
 							<Link href="/orders" className={linkClass("/orders")}>
 								<ShoppingCart className="h-4 w-4" />

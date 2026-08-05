@@ -180,8 +180,7 @@ function OrdersPageContent() {
 							<SelectItem value="ALL">Tất cả trạng thái</SelectItem>
 							<SelectItem value={OrderStatus.PENDING}>Chờ xử lý</SelectItem>
 							<SelectItem value={OrderStatus.PROCESSING}>Đang xử lý</SelectItem>
-							<SelectItem value={OrderStatus.SHIPPED}>Đang giao</SelectItem>
-							<SelectItem value={OrderStatus.DELIVERED}>Đã giao</SelectItem>
+							<SelectItem value={OrderStatus.DELIVERED}>Hoàn tất</SelectItem>
 							<SelectItem value={OrderStatus.CANCELLED}>Đã hủy</SelectItem>
 						</SelectContent>
 					</Select>

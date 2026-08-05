@@ -83,7 +83,7 @@ function ProcessingStationPageContent() {
 			<div className="flex items-center justify-between pb-4 border-b mb-4 shrink-0">
 				<div>
 					<h1 className="text-2xl font-bold tracking-tight">
-						Trạm Xử Lý Đơn Hàng
+						Xử Lý Đơn Hàng
 					</h1>
 					<p className="text-muted-foreground">
 						Khu vực xử lý nhanh các đơn hàng đang hoạt động.

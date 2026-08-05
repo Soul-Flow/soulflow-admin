@@ -11,13 +11,13 @@ interface OrderState {
 
 	loading: boolean;
 
-	save: (request: OrderRequest) => Promise<OrderResponse | undefined>;
+	save: (request: OrderRequest) => Promise<OrderResponse>;
+	updateStatus: (pk: number, status: OrderStatus) => Promise<void>;
+	deleteByPk: (pk: number) => Promise<void>;
 
 	createCustomOrder: (
 		request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest,
 	) => Promise<OrderResponse | undefined>;
-
-	deleteByPk: (pk: number) => Promise<void>;
 
 	findByPk: (
 		params: {
@@ -65,6 +65,18 @@ const useOrderStore = create<OrderState>((set, get) => ({
 		try {
 			set({ loading: true });
 			return await orderService.save(request);
+		} catch (error) {
+			console.log(error);
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+
+	updateStatus: async (pk: number, status: OrderStatus): Promise<void> => {
+		try {
+			set({ loading: true });
+			await orderService.updateStatus(pk, status);
 		} catch (error) {
 			console.log(error);
 			throw error;

@@ -12,6 +12,10 @@ export const orderService = {
 		return response.data;
 	},
 
+	updateStatus: async (pk: number, status: OrderStatus): Promise<void> => {
+		await api.put(`/order/${pk}/status`, null, { params: { status } });
+	},
+
 	createCustomOrder: async (
 		request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest,
 	): Promise<OrderResponse> => {

@@ -77,7 +77,7 @@ interface OrderDetailProps {
 }
 
 export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
-	const { save, deleteByPk } = useOrderStore();
+	const { updateStatus, deleteByPk } = useOrderStore();
 	const [isUpdating, setIsUpdating] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -103,15 +103,7 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 		if (!pendingStatus || !order) return;
 		setIsUpdating(true);
 		try {
-			await save({
-				pk: Number(order.pk),
-				status: pendingStatus as OrderStatus,
-				fullname: order.fullname,
-				phone: order.phone,
-				address: order.address,
-				accountPk: Number(order.accountPk),
-				orderDetailRequests: [],
-			});
+			await updateStatus(Number(order.pk), pendingStatus as OrderStatus);
 
 			toast.success(
 				`Đã cập nhật trạng thái đơn hàng ${order.code} thành ${statusConfig[pendingStatus]?.label || pendingStatus}`,
@@ -210,13 +202,47 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							{Object.entries(statusConfig)
-								.filter(([val]) => val !== OrderStatus.CANCELLED)
-								.map(([val, cfg]) => (
-									<SelectItem key={val} value={val} className="font-medium">
-										{cfg.label}
-									</SelectItem>
-								))}
+							{(() => {
+								const allowedStatusesByPaymentMethod = {
+									SEPAY: [
+										OrderStatus.PENDING,
+										OrderStatus.WAITING_PAYMENT,
+										OrderStatus.PAID,
+										OrderStatus.PROCESSING,
+										OrderStatus.DELIVERED,
+										OrderStatus.CANCELLED,
+									],
+									COD: [
+										OrderStatus.PENDING,
+										OrderStatus.PROCESSING,
+										OrderStatus.PAID,
+										OrderStatus.DELIVERED,
+										OrderStatus.CANCELLED,
+									],
+									STORE: [
+										OrderStatus.PENDING,
+										OrderStatus.PROCESSING,
+										OrderStatus.PAID,
+										OrderStatus.DELIVERED,
+										OrderStatus.CANCELLED,
+									],
+								};
+
+								const allowedStatuses =
+									(order.paymentMethod &&
+										allowedStatusesByPaymentMethod[
+											order.paymentMethod as keyof typeof allowedStatusesByPaymentMethod
+										]) ||
+									Object.values(OrderStatus);
+
+								return Object.entries(statusConfig)
+									.filter(([val]) => allowedStatuses.includes(val as OrderStatus))
+									.map(([val, cfg]) => (
+										<SelectItem key={val} value={val} className="font-medium">
+											{cfg.label}
+										</SelectItem>
+									));
+							})()}
 						</SelectContent>
 					</Select>
 
@@ -258,7 +284,7 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 								<span className="font-medium text-muted-foreground text-sm">
 									Địa chỉ:
 								</span>
-								<span className="col-span-2">{order.address}</span>
+								<span className="col-span-2">{order.address?.replace(/\|\|/g, ", ")}</span>
 							</div>
 							<div className="grid grid-cols-3 gap-2 items-center">
 								<span className="font-medium text-muted-foreground text-sm">

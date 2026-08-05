@@ -96,7 +96,7 @@ function StatusCell({
 	onMutated: () => void;
 }) {
 	const order = row.original;
-	const { save } = useOrderStore();
+	const { updateStatus } = useOrderStore();
 	const [status, setStatus] = useState<string>(order.status);
 	const [isUpdating, setIsUpdating] = useState(false);
 
@@ -104,15 +104,7 @@ function StatusCell({
 		setStatus(newStatus);
 		setIsUpdating(true);
 		try {
-			await save({
-				pk: Number(order.pk),
-				status: newStatus as OrderStatus,
-				fullname: order.fullname,
-				phone: order.phone,
-				address: order.address,
-				accountPk: Number(order.accountPk),
-				orderDetailRequests: [],
-			});
+			await updateStatus(Number(order.pk), newStatus as OrderStatus);
 			toast.success(`Đã cập nhật trạng thái đơn hàng ${order.code}!`);
 			onMutated();
 		} catch {
@@ -124,6 +116,38 @@ function StatusCell({
 	};
 
 	const config = statusConfig[status] ?? { label: status, className: "" };
+
+	const allowedStatusesByPaymentMethod = {
+		SEPAY: [
+			OrderStatus.PENDING,
+			OrderStatus.WAITING_PAYMENT,
+			OrderStatus.PAID,
+			OrderStatus.PROCESSING,
+			OrderStatus.DELIVERED,
+			OrderStatus.CANCELLED,
+		],
+		COD: [
+			OrderStatus.PENDING,
+			OrderStatus.PROCESSING,
+			OrderStatus.PAID,
+			OrderStatus.DELIVERED,
+			OrderStatus.CANCELLED,
+		],
+		STORE: [
+			OrderStatus.PENDING,
+			OrderStatus.PROCESSING,
+			OrderStatus.PAID,
+			OrderStatus.DELIVERED,
+			OrderStatus.CANCELLED,
+		],
+	};
+
+	const allowedStatuses =
+		(order.paymentMethod &&
+			allowedStatusesByPaymentMethod[
+				order.paymentMethod as keyof typeof allowedStatusesByPaymentMethod
+			]) ||
+		Object.values(OrderStatus);
 
 	return (
 		<Select
@@ -137,11 +161,13 @@ function StatusCell({
 				<SelectValue />
 			</SelectTrigger>
 			<SelectContent>
-				{Object.entries(statusConfig).map(([val, cfg]) => (
-					<SelectItem key={val} value={val} className="text-xs">
-						{cfg.label}
-					</SelectItem>
-				))}
+				{Object.entries(statusConfig)
+					.filter(([val]) => allowedStatuses.includes(val as OrderStatus))
+					.map(([val, cfg]) => (
+						<SelectItem key={val} value={val} className="text-xs">
+							{cfg.label}
+						</SelectItem>
+					))}
 			</SelectContent>
 		</Select>
 	);
@@ -252,7 +278,7 @@ function ActionCell({
 								<span className="font-medium text-muted-foreground">
 									Địa chỉ:
 								</span>
-								<span className="col-span-2">{order.address}</span>
+								<span className="col-span-2">{order.address?.replace(/\|\|/g, ", ")}</span>
 							</div>
 							<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
 								<span className="font-medium text-muted-foreground">
