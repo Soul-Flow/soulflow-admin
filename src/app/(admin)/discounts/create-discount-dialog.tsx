@@ -21,12 +21,15 @@ import { Label } from "@/components/ui/label";
 import useDiscountStore from "@/stores/discountStore";
 
 const discountSchema = z.object({
+	code: z.string().optional(),
 	descriptionVn: z.string().min(1, "Mô tả tiếng Việt là bắt buộc"),
 	descriptionEng: z.string().optional(),
 	percentage: z
 		.number({ message: "Phần trăm giảm giá phải là số" })
 		.min(1, "Tối thiểu 1%")
 		.max(100, "Tối đa 100%"),
+	minOrderAmount: z.number({ message: "Bắt buộc nhập và phải là số" }).min(0, "Không được nhỏ hơn 0"),
+	usageLimit: z.number({ message: "Bắt buộc nhập và phải là số" }).min(1, "Tối thiểu 1 lượt"),
 	expiredDate: z.string().min(1, "Ngày hết hạn là bắt buộc"),
 });
 
@@ -51,17 +54,27 @@ export function CreateDiscountDialog({ onCreated }: CreateDiscountDialogProps) {
 			descriptionVn: "",
 			descriptionEng: "",
 			percentage: 0,
+			minOrderAmount: 0,
+			usageLimit: 999999,
 			expiredDate: "",
 		},
 	});
 
 	const onSubmit = async (data: DiscountFormValues) => {
 		try {
+			// Backend cần LocalDateTime nên phải thêm giờ vào cuối chuỗi YYYY-MM-DD
+			const formattedExpiredDate = data.expiredDate
+				? (data.expiredDate.length === 10 ? `${data.expiredDate}T23:59:59` : data.expiredDate)
+				: "";
+
 			await save({
+				code: data.code,
 				percentage: data.percentage,
+				minOrderAmount: data.minOrderAmount,
+				usageLimit: data.usageLimit,
 				descriptionVn: data.descriptionVn,
 				descriptionEng: data.descriptionEng ?? data.descriptionVn,
-				expiredDate: data.expiredDate,
+				expiredDate: formattedExpiredDate,
 				productRequests: [],
 			});
 			toast.success("Đã tạo mã giảm giá mới thành công!", {
@@ -98,6 +111,21 @@ export function CreateDiscountDialog({ onCreated }: CreateDiscountDialogProps) {
 
 				<form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-2">
 					<div className="grid gap-2">
+						<Label htmlFor="d-code">Mã Khuyến Mãi</Label>
+						<Input
+							id="d-code"
+							placeholder="VD: SUMMER10 (Bỏ trống sẽ tạo ngẫu nhiên)"
+							{...register("code")}
+							aria-invalid={!!errors.code}
+						/>
+						{errors.code && (
+							<p className="text-xs text-destructive">
+								{errors.code.message}
+							</p>
+						)}
+					</div>
+
+					<div className="grid gap-2">
 						<Label htmlFor="d-descVn">Mô tả (VN) *</Label>
 						<Input
 							id="d-descVn"
@@ -121,8 +149,41 @@ export function CreateDiscountDialog({ onCreated }: CreateDiscountDialogProps) {
 						/>
 					</div>
 
+					<div className="grid grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="d-minOrderAmount">Đơn tối thiểu (VNĐ) *</Label>
+							<Input
+								id="d-minOrderAmount"
+								type="number"
+								placeholder="VD: 100000"
+								{...register("minOrderAmount", { valueAsNumber: true })}
+								aria-invalid={!!errors.minOrderAmount}
+							/>
+							{errors.minOrderAmount && (
+								<p className="text-xs text-destructive">
+									{errors.minOrderAmount.message}
+								</p>
+							)}
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="d-usageLimit">Số lượt dùng tối đa *</Label>
+							<Input
+								id="d-usageLimit"
+								type="number"
+								placeholder="VD: 100"
+								{...register("usageLimit", { valueAsNumber: true })}
+								aria-invalid={!!errors.usageLimit}
+							/>
+							{errors.usageLimit && (
+								<p className="text-xs text-destructive">
+									{errors.usageLimit.message}
+								</p>
+							)}
+						</div>
+					</div>
+
 					<div className="grid gap-2">
-						<Label htmlFor="d-percentage">Giảm giá (%) *</Label>
+						<Label htmlFor="d-percentage">Phần trăm giảm (%) *</Label>
 						<Input
 							id="d-percentage"
 							type="number"

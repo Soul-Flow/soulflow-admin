@@ -11,11 +11,13 @@ interface OrderState {
 
 	loading: boolean;
 
-	save: (request: OrderRequest) => Promise<OrderResponse | undefined>;
-
-	createCustomOrder: (request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest) => Promise<OrderResponse | undefined>;
-
+	save: (request: OrderRequest) => Promise<OrderResponse>;
+	updateStatus: (pk: number, status: OrderStatus) => Promise<void>;
 	deleteByPk: (pk: number) => Promise<void>;
+
+	createCustomOrder: (
+		request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest,
+	) => Promise<OrderResponse | undefined>;
 
 	findByPk: (
 		params: {
@@ -71,6 +73,18 @@ const useOrderStore = create<OrderState>((set, get) => ({
 		}
 	},
 
+	updateStatus: async (pk: number, status: OrderStatus): Promise<void> => {
+		try {
+			set({ loading: true });
+			await orderService.updateStatus(pk, status);
+		} catch (error) {
+			console.log(error);
+			throw error;
+		} finally {
+			set({ loading: false });
+		}
+	},
+
 	deleteByPk: async (pk: number): Promise<void> => {
 		try {
 			set({ loading: true });
@@ -83,7 +97,9 @@ const useOrderStore = create<OrderState>((set, get) => ({
 		}
 	},
 
-	createCustomOrder: async (request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest) => {
+	createCustomOrder: async (
+		request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest,
+	) => {
 		try {
 			set({ loading: true });
 			const response = await orderService.createCustomOrder(request);

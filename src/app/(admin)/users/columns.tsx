@@ -206,8 +206,12 @@ function ActionCell({
 					<div className="mt-6 px-4 pb-6 space-y-4 text-sm">
 						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
 							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">Họ tên:</span>
-								<span className="col-span-2 font-medium">{account.fullname}</span>
+								<span className="font-medium text-muted-foreground">
+									Họ tên:
+								</span>
+								<span className="col-span-2 font-medium">
+									{account.fullname}
+								</span>
 							</div>
 							<div className="grid grid-cols-3 gap-2 border-b pb-2">
 								<span className="font-medium text-muted-foreground">
@@ -216,7 +220,9 @@ function ActionCell({
 								<span className="col-span-2">{account.username}</span>
 							</div>
 							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">Email:</span>
+								<span className="font-medium text-muted-foreground">
+									Email:
+								</span>
 								<span className="col-span-2">{account.email}</span>
 							</div>
 							<div className="grid grid-cols-3 gap-2 border-b pb-2">

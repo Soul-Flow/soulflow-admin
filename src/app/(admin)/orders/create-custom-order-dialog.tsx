@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { PlusCircle, Search, Loader2 } from "lucide-react";
+import { Loader2, PlusCircle, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -15,10 +16,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	Select,
 	SelectContent,
@@ -26,13 +25,12 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { SortOrder } from "@/enums/sort-order.enum";
+import ghnData from "@/lib/data/ghn-locations.json";
 import { accountService } from "@/services/accountService";
 import { shippingService } from "@/services/shippingService";
 import useOrderStore from "@/stores/orderStore";
 import useProductStore from "@/stores/productStore";
-import { SortOrder } from "@/enums/sort-order.enum";
-import type { ProductResponse } from "@/interfaces/responses/product-response.interface";
-import ghnData from "@/lib/data/ghn-locations.json";
 
 const formSchema = z.object({
 	username: z.string().min(1, "Vui lòng nhập Username để tìm kiếm"),
@@ -50,7 +48,11 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void }) {
+export function CreateCustomOrderDialog({
+	onCreated,
+}: {
+	onCreated?: () => void;
+}) {
 	const [open, setOpen] = useState(false);
 	const [isSearching, setIsSearching] = useState(false);
 	const [isCalculatingFee, setIsCalculatingFee] = useState(false);
@@ -90,8 +92,10 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 
 	// Location data processing
 	const provinces = ghnData as any[];
-	const districts = provinces.find((p) => p.id === watchProvinceId)?.districts || [];
-	const wards = districts.find((d: any) => d.id === watchDistrictId)?.wards || [];
+	const districts =
+		provinces.find((p) => p.id === watchProvinceId)?.districts || [];
+	const wards =
+		districts.find((d: any) => d.id === watchDistrictId)?.wards || [];
 
 	useEffect(() => {
 		if (open) {
@@ -107,25 +111,28 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 				sortOrder: SortOrder.DESC,
 				pageNumber: 0,
 				pageSize: 100,
-			}).then((page) => {
-				if (page?.content) {
-					// Fallback: try to find custom product, or use the first available product
-					const customProduct = page.content.find((p: any) => 
-						String(p.customised) === "true" || 
-						p.nameVn.toLowerCase().includes("custom") || 
-						p.nameEng.toLowerCase().includes("custom")
-					);
-					if (customProduct) {
-						setCustomProductPk(Number(customProduct.pk));
-					} else if (page.content.length > 0) {
-						setCustomProductPk(Number(page.content[0].pk));
+			})
+				.then((page) => {
+					if (page?.content) {
+						// Fallback: try to find custom product, or use the first available product
+						const customProduct = page.content.find(
+							(p: any) =>
+								String(p.customised) === "true" ||
+								p.nameVn.toLowerCase().includes("custom") ||
+								p.nameEng.toLowerCase().includes("custom"),
+						);
+						if (customProduct) {
+							setCustomProductPk(Number(customProduct.pk));
+						} else if (page.content.length > 0) {
+							setCustomProductPk(Number(page.content[0].pk));
+						}
 					}
-				}
-			}).catch(err => console.error("Failed to fetch products for custom order:", err));
+				})
+				.catch((err) =>
+					console.error("Failed to fetch products for custom order:", err),
+				);
 		}
 	}, [open, filterProducts]);
-
-
 
 	// Auto calculate shipping fee when ward changes
 	useEffect(() => {
@@ -133,11 +140,16 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 			const calculateFee = async () => {
 				setIsCalculatingFee(true);
 				try {
-					const res = await shippingService.calculateFee(watchDistrictId, watchWardCode);
+					const res = await shippingService.calculateFee(
+						watchDistrictId,
+						watchWardCode,
+					);
 					setValue("shippingFee", res.total || 0);
 				} catch (error) {
 					console.error("Failed to calculate shipping fee:", error);
-					toast.error("Không thể tính phí vận chuyển tự động. Vui lòng tự nhập.");
+					toast.error(
+						"Không thể tính phí vận chuyển tự động. Vui lòng tự nhập.",
+					);
 				} finally {
 					setIsCalculatingFee(false);
 				}
@@ -166,33 +178,51 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 			if (account.address) {
 				const normalizeLoc = (str: string) => {
 					if (!str) return "";
-					return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-						.replace(/đ/g, "d").replace(/Đ/g, "D")
+					return str
+						.normalize("NFD")
+						.replace(/[\u0300-\u036f]/g, "")
+						.replace(/đ/g, "d")
+						.replace(/Đ/g, "D")
 						.toLowerCase()
-						.replace(/thanh pho|tinh|quan|huyen|thi xa|phuong|xa|thi tran|tp\.?|ward|district|province/g, "")
+						.replace(
+							/thanh pho|tinh|quan|huyen|thi xa|phuong|xa|thi tran|tp\.?|ward|district|province/g,
+							"",
+						)
 						.replace(/hcm/g, "ho chi minh")
 						.trim();
 				};
 
 				let parts = [];
 				if (account.address.includes("||")) {
-					parts = account.address.split("||").map(p => p.trim());
+					parts = account.address.split("||").map((p) => p.trim());
 				} else {
-					parts = account.address.split(",").map(p => p.trim());
+					parts = account.address.split(",").map((p) => p.trim());
 				}
-				
+
 				if (parts.length >= 3) {
 					const provName = parts[parts.length - 1];
 					const distName = parts[parts.length - 2];
 					const wardName = parts[parts.length - 3];
-					
-					const p = provinces.find(prov => normalizeLoc(prov.name) === normalizeLoc(provName) || normalizeLoc(provName).includes(normalizeLoc(prov.name)));
+
+					const p = provinces.find(
+						(prov) =>
+							normalizeLoc(prov.name) === normalizeLoc(provName) ||
+							normalizeLoc(provName).includes(normalizeLoc(prov.name)),
+					);
 					if (p) {
 						matchedProvinceId = p.id;
-						const d = p.districts.find((dist: any) => normalizeLoc(dist.name) === normalizeLoc(distName) || normalizeLoc(distName).includes(normalizeLoc(dist.name)));
+						const d = p.districts.find(
+							(dist: any) =>
+								normalizeLoc(dist.name) === normalizeLoc(distName) ||
+								normalizeLoc(distName).includes(normalizeLoc(dist.name)),
+						);
 						if (d) {
 							matchedDistrictId = d.id;
-							const w = d.wards.find((ward: any) => normalizeLoc(ward.name) === normalizeLoc(wardName) || normalizeLoc(wardName).includes(normalizeLoc(ward.name)));
+							const w = d.wards.find(
+								(ward: any) =>
+									normalizeLoc(ward.name) === normalizeLoc(wardName) ||
+									normalizeLoc(wardName).includes(normalizeLoc(ward.name)),
+							);
 							if (w) {
 								matchedWardCode = w.code;
 								addressDetail = parts.slice(0, parts.length - 3).join(", ");
@@ -202,17 +232,23 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 						}
 					}
 				}
-				
+
 				// Fallback
 				if (!matchedProvinceId) {
 					const addressNorm = normalizeLoc(account.address);
-					const p = provinces.find((prov) => addressNorm.includes(normalizeLoc(prov.name)));
+					const p = provinces.find((prov) =>
+						addressNorm.includes(normalizeLoc(prov.name)),
+					);
 					if (p) {
 						matchedProvinceId = p.id;
-						const d = p.districts.find((dist: any) => addressNorm.includes(normalizeLoc(dist.name)));
+						const d = p.districts.find((dist: any) =>
+							addressNorm.includes(normalizeLoc(dist.name)),
+						);
 						if (d) {
 							matchedDistrictId = d.id;
-							const w = d.wards.find((ward: any) => addressNorm.includes(normalizeLoc(ward.name)));
+							const w = d.wards.find((ward: any) =>
+								addressNorm.includes(normalizeLoc(ward.name)),
+							);
 							if (w) {
 								matchedWardCode = w.code;
 								addressDetail = account.address
@@ -232,9 +268,9 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 			setValue("districtId", matchedDistrictId);
 			setValue("wardCode", matchedWardCode);
 			setValue("addressDetail", addressDetail);
-			
+
 			toast.success("Đã tìm thấy thông tin khách hàng");
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Không tìm thấy khách hàng với Username này");
 			setValue("accountPk", 0);
 		} finally {
@@ -244,10 +280,13 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 
 	const onSubmit = async (data: FormValues) => {
 		try {
-			const provinceName = provinces.find((p) => p.id === data.provinceId)?.name || "";
-			const districtName = districts.find((d: any) => d.id === data.districtId)?.name || "";
-			const wardName = wards.find((w: any) => w.code === data.wardCode)?.name || "";
-			
+			const provinceName =
+				provinces.find((p) => p.id === data.provinceId)?.name || "";
+			const districtName =
+				districts.find((d: any) => d.id === data.districtId)?.name || "";
+			const wardName =
+				wards.find((w: any) => w.code === data.wardCode)?.name || "";
+
 			const fullAddress = `${data.addressDetail}, ${wardName}, ${districtName}, ${provinceName}`;
 
 			await createCustomOrder({
@@ -266,12 +305,12 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 					},
 				],
 			});
-			
+
 			toast.success("Tạo đơn hàng custom thành công!");
 			setOpen(false);
 			reset();
 			onCreated?.();
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Tạo đơn hàng thất bại. Vui lòng kiểm tra lại.");
 		}
 	};
@@ -284,11 +323,15 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 					Tạo Đơn Hàng Custom
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()}>
+			<DialogContent
+				className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto"
+				onInteractOutside={(e) => e.preventDefault()}
+			>
 				<DialogHeader>
 					<DialogTitle>Tạo Đơn Hàng Custom</DialogTitle>
 					<DialogDescription>
-						Tạo đơn hàng theo yêu cầu, tùy chỉnh giá và tính phí vận chuyển tự động.
+						Tạo đơn hàng theo yêu cầu, tùy chỉnh giá và tính phí vận chuyển tự
+						động.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -296,7 +339,7 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 					{/* Section 1: Customer */}
 					<div className="space-y-4 border p-4 rounded-lg bg-muted/20">
 						<h3 className="font-semibold text-sm">1. Thông tin khách hàng</h3>
-						
+
 						<div className="flex gap-2 items-end">
 							<div className="flex-1 space-y-2">
 								<Label htmlFor="username">Username khách hàng *</Label>
@@ -312,89 +355,153 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 									}}
 								/>
 							</div>
-							<Button type="button" onClick={handleSearchUser} disabled={isSearching} variant="secondary">
-								{isSearching ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Search className="w-4 h-4 mr-2" />}
+							<Button
+								type="button"
+								onClick={handleSearchUser}
+								disabled={isSearching}
+								variant="secondary"
+							>
+								{isSearching ? (
+									<Loader2 className="w-4 h-4 animate-spin mr-2" />
+								) : (
+									<Search className="w-4 h-4 mr-2" />
+								)}
 								Tìm
 							</Button>
 						</div>
-						{errors.username && <p className="text-xs text-destructive">{errors.username.message}</p>}
-						{errors.accountPk && <p className="text-xs text-destructive">{errors.accountPk.message}</p>}
+						{errors.username && (
+							<p className="text-xs text-destructive">
+								{errors.username.message}
+							</p>
+						)}
+						{errors.accountPk && (
+							<p className="text-xs text-destructive">
+								{errors.accountPk.message}
+							</p>
+						)}
 
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-2">
 								<Label htmlFor="fullname">Họ tên người nhận *</Label>
 								<Input id="fullname" {...register("fullname")} />
-								{errors.fullname && <p className="text-xs text-destructive">{errors.fullname.message}</p>}
+								{errors.fullname && (
+									<p className="text-xs text-destructive">
+										{errors.fullname.message}
+									</p>
+								)}
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="phone">Số điện thoại *</Label>
 								<Input id="phone" {...register("phone")} />
-								{errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
+								{errors.phone && (
+									<p className="text-xs text-destructive">
+										{errors.phone.message}
+									</p>
+								)}
 							</div>
 						</div>
 					</div>
 
 					{/* Section 2: Shipping */}
 					<div className="space-y-4 border p-4 rounded-lg bg-muted/20">
-						<h3 className="font-semibold text-sm">2. Địa chỉ & Vận chuyển (GHN)</h3>
-						
+						<h3 className="font-semibold text-sm">
+							2. Địa chỉ & Vận chuyển (GHN)
+						</h3>
+
 						<div className="space-y-2">
-							<Label htmlFor="addressDetail">Địa chỉ chi tiết (Số nhà, đường) *</Label>
+							<Label htmlFor="addressDetail">
+								Địa chỉ chi tiết (Số nhà, đường) *
+							</Label>
 							<Input id="addressDetail" {...register("addressDetail")} />
-							{errors.addressDetail && <p className="text-xs text-destructive">{errors.addressDetail.message}</p>}
+							{errors.addressDetail && (
+								<p className="text-xs text-destructive">
+									{errors.addressDetail.message}
+								</p>
+							)}
 						</div>
 
 						<div className="grid grid-cols-3 gap-4">
 							<div className="space-y-2">
 								<Label>Tỉnh/Thành phố *</Label>
-								<Select value={watchProvinceId ? String(watchProvinceId) : ""} onValueChange={(v) => {
-									setValue("provinceId", Number(v));
-									setValue("districtId", 0);
-									setValue("wardCode", "");
-								}}>
+								<Select
+									value={watchProvinceId ? String(watchProvinceId) : ""}
+									onValueChange={(v) => {
+										setValue("provinceId", Number(v));
+										setValue("districtId", 0);
+										setValue("wardCode", "");
+									}}
+								>
 									<SelectTrigger>
 										<SelectValue placeholder="Chọn Tỉnh/Thành" />
 									</SelectTrigger>
 									<SelectContent>
 										{provinces.map((p) => (
-											<SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+											<SelectItem key={p.id} value={String(p.id)}>
+												{p.name}
+											</SelectItem>
 										))}
 									</SelectContent>
 								</Select>
-								{errors.provinceId && <p className="text-xs text-destructive">{errors.provinceId.message}</p>}
+								{errors.provinceId && (
+									<p className="text-xs text-destructive">
+										{errors.provinceId.message}
+									</p>
+								)}
 							</div>
-							
+
 							<div className="space-y-2">
 								<Label>Quận/Huyện *</Label>
-								<Select key={`dist-${watchProvinceId}`} disabled={!watchProvinceId} value={watchDistrictId ? String(watchDistrictId) : ""} onValueChange={(v) => {
-									setValue("districtId", Number(v));
-									setValue("wardCode", "");
-								}}>
+								<Select
+									key={`dist-${watchProvinceId}`}
+									disabled={!watchProvinceId}
+									value={watchDistrictId ? String(watchDistrictId) : ""}
+									onValueChange={(v) => {
+										setValue("districtId", Number(v));
+										setValue("wardCode", "");
+									}}
+								>
 									<SelectTrigger>
 										<SelectValue placeholder="Chọn Quận/Huyện" />
 									</SelectTrigger>
 									<SelectContent>
 										{districts.map((d: any) => (
-											<SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
+											<SelectItem key={d.id} value={String(d.id)}>
+												{d.name}
+											</SelectItem>
 										))}
 									</SelectContent>
 								</Select>
-								{errors.districtId && <p className="text-xs text-destructive">{errors.districtId.message}</p>}
+								{errors.districtId && (
+									<p className="text-xs text-destructive">
+										{errors.districtId.message}
+									</p>
+								)}
 							</div>
 
 							<div className="space-y-2">
 								<Label>Phường/Xã *</Label>
-								<Select key={`ward-${watchDistrictId}`} disabled={!watchDistrictId} value={watchWardCode || ""} onValueChange={(v) => setValue("wardCode", v)}>
+								<Select
+									key={`ward-${watchDistrictId}`}
+									disabled={!watchDistrictId}
+									value={watchWardCode || ""}
+									onValueChange={(v) => setValue("wardCode", v)}
+								>
 									<SelectTrigger>
 										<SelectValue placeholder="Chọn Phường/Xã" />
 									</SelectTrigger>
 									<SelectContent>
 										{wards.map((w: any) => (
-											<SelectItem key={w.code} value={String(w.code)}>{w.name}</SelectItem>
+											<SelectItem key={w.code} value={String(w.code)}>
+												{w.name}
+											</SelectItem>
 										))}
 									</SelectContent>
 								</Select>
-								{errors.wardCode && <p className="text-xs text-destructive">{errors.wardCode.message}</p>}
+								{errors.wardCode && (
+									<p className="text-xs text-destructive">
+										{errors.wardCode.message}
+									</p>
+								)}
 							</div>
 						</div>
 					</div>
@@ -402,7 +509,7 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 					{/* Section 3: Product & Payment */}
 					<div className="space-y-4 border p-4 rounded-lg bg-muted/20">
 						<h3 className="font-semibold text-sm">3. Sản phẩm & Thanh toán</h3>
-						
+
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-2">
 								<Label>Sản phẩm *</Label>
@@ -410,11 +517,19 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 									Hoa Custom (Tạo theo yêu cầu)
 								</div>
 							</div>
-							
+
 							<div className="space-y-2">
 								<Label htmlFor="price">Giá trị đơn hàng (VNĐ) *</Label>
-								<Input id="price" type="number" {...register("price", { valueAsNumber: true })} />
-								{errors.price && <p className="text-xs text-destructive">{errors.price.message}</p>}
+								<Input
+									id="price"
+									type="number"
+									{...register("price", { valueAsNumber: true })}
+								/>
+								{errors.price && (
+									<p className="text-xs text-destructive">
+										{errors.price.message}
+									</p>
+								)}
 							</div>
 						</div>
 
@@ -422,30 +537,55 @@ export function CreateCustomOrderDialog({ onCreated }: { onCreated?: () => void 
 							<div className="space-y-2">
 								<Label htmlFor="shippingFee">Phí vận chuyển (VNĐ) *</Label>
 								<div className="relative">
-									{isCalculatingFee && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}
-									<Input id="shippingFee" type="number" {...register("shippingFee", { valueAsNumber: true })} />
+									{isCalculatingFee && (
+										<Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+									)}
+									<Input
+										id="shippingFee"
+										type="number"
+										{...register("shippingFee", { valueAsNumber: true })}
+									/>
 								</div>
-								{errors.shippingFee && <p className="text-xs text-destructive">{errors.shippingFee.message}</p>}
+								{errors.shippingFee && (
+									<p className="text-xs text-destructive">
+										{errors.shippingFee.message}
+									</p>
+								)}
 							</div>
-							
+
 							<div className="space-y-2">
 								<Label>Phương thức thanh toán *</Label>
-								<Select value={watchPaymentMethod} onValueChange={(v) => setValue("paymentMethod", v)}>
+								<Select
+									value={watchPaymentMethod}
+									onValueChange={(v) => setValue("paymentMethod", v)}
+								>
 									<SelectTrigger>
 										<SelectValue placeholder="Chọn phương thức" />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="COD">Thanh toán khi nhận hàng (COD)</SelectItem>
-										<SelectItem value="STORE">Thanh toán tại cửa hàng (STORE)</SelectItem>
+										<SelectItem value="COD">
+											Thanh toán khi nhận hàng (COD)
+										</SelectItem>
+										<SelectItem value="STORE">
+											Thanh toán tại cửa hàng (STORE)
+										</SelectItem>
 									</SelectContent>
 								</Select>
-								{errors.paymentMethod && <p className="text-xs text-destructive">{errors.paymentMethod.message}</p>}
+								{errors.paymentMethod && (
+									<p className="text-xs text-destructive">
+										{errors.paymentMethod.message}
+									</p>
+								)}
 							</div>
 						</div>
 					</div>
 
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={() => setOpen(false)}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setOpen(false)}
+						>
 							Hủy
 						</Button>
 						<Button type="submit" disabled={isSubmitting}>

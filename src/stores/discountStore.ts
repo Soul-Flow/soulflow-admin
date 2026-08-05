@@ -50,7 +50,9 @@ const useDiscountStore = create<DiscountState>((set, get) => ({
 	save: async (request: DiscountRequest): Promise<DiscountResponse> => {
 		try {
 			set({ loading: true });
-			return await discountService.save(request);
+			const result = await discountService.save(request);
+			get().clearCache();
+			return result;
 		} catch (error) {
 			console.log(error);
 			throw error;
@@ -63,6 +65,7 @@ const useDiscountStore = create<DiscountState>((set, get) => ({
 		try {
 			set({ loading: true });
 			await discountService.deleteByPk(pk);
+			get().clearCache();
 		} catch (error) {
 			console.log(error);
 			throw error;
@@ -151,15 +154,16 @@ const useDiscountStore = create<DiscountState>((set, get) => ({
 
 			const page = get().pages.get(key);
 
-			if (page) {
-				set((state) => {
-					const newMap = new Map(state.pages);
-					newMap.delete(key);
-					newMap.set(key, page);
-					return { pages: newMap };
-				});
-				return page;
-			}
+			// Comment out strict caching to allow real-time updates for Admin
+			// if (page) {
+			// 	set((state) => {
+			// 		const newMap = new Map(state.pages);
+			// 		newMap.delete(key);
+			// 		newMap.set(key, page);
+			// 		return { pages: newMap };
+			// 	});
+			// 	return page;
+			// }
 
 			const newPage = await discountService.filter({
 				keyword,

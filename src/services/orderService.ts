@@ -12,7 +12,13 @@ export const orderService = {
 		return response.data;
 	},
 
-	createCustomOrder: async (request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest): Promise<OrderResponse> => {
+	updateStatus: async (pk: number, status: OrderStatus): Promise<void> => {
+		await api.put(`/order/${pk}/status`, null, { params: { status } });
+	},
+
+	createCustomOrder: async (
+		request: import("../interfaces/resquests/admin-order-request.interface").AdminOrderRequest,
+	): Promise<OrderResponse> => {
 		const response = await api.post<OrderResponse>("/order", request);
 		return response.data;
 	},
@@ -76,14 +82,17 @@ export const orderService = {
 		pageNumber?: number;
 		pageSize?: number;
 	} = {}): Promise<PageResponse<OrderResponse>> => {
-		const response = await api.get<PageResponse<OrderResponse>>("/order/active", {
-			params: {
-				keyword,
-				sortOrder,
-				pageNumber,
-				pageSize,
+		const response = await api.get<PageResponse<OrderResponse>>(
+			"/order/active",
+			{
+				params: {
+					keyword,
+					sortOrder,
+					pageNumber,
+					pageSize,
+				},
 			},
-		});
+		);
 		return response.data;
 	},
 };

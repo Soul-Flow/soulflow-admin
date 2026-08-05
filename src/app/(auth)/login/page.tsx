@@ -73,6 +73,7 @@ export default function LoginPage() {
 		router.replace("/login");
 		void handleLogin(queryUsername, queryPassword);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// biome-ignore lint/correctness/useExhaustiveDependencies: We only want this to run once on mount
 	}, [router, searchParams]);
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {

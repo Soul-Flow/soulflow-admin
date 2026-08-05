@@ -195,7 +195,10 @@ export default function CategoriesPage() {
 				</div>
 
 				{/* table */}
-				<DataTable columns={columns({ onMutated, isDeletedList: deleted })} data={data} />
+				<DataTable
+					columns={columns({ onMutated, isDeletedList: deleted })}
+					data={data}
+				/>
 
 				{/* pagination */}
 				<div className="flex items-center justify-between px-2">
