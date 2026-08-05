@@ -4,8 +4,10 @@ import {
 	AlertCircle,
 	DollarSign,
 	Loader2,
+	Minus,
 	Package,
 	ShoppingCart,
+	TrendingDown,
 	TrendingUp,
 	Users,
 } from "lucide-react";
@@ -46,12 +48,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	type DashboardFilter,
-	getRevenueReport,
-	type RevenueReportItem,
-	type RevenueReportType,
-} from "@/services/dashboardService";
+import type { DashboardFilter } from "@/services/dashboardService";
 import useDashboardStore from "@/stores/dashboardStore";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
@@ -78,22 +75,16 @@ const barChartConfig: ChartConfig = {
 	},
 };
 
-const currentYear = new Date().getFullYear();
-const revenueStartMinDate = `${currentYear - 5}-01-01`;
-const currentYearEndDate = `${currentYear}-12-31`;
-
 // ─── Page Component ─────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
 	const [filter, setFilter] = useState<DashboardFilter>("month");
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
-	const [revenueType, setRevenueType] = useState<RevenueReportType>("MONTH");
-	const [revenueStartDate, setRevenueStartDate] = useState("");
-	const [revenueEndDate, setRevenueEndDate] = useState("");
-	const [revenueReport, setRevenueReport] = useState<RevenueReportItem[]>([]);
-	const [revenueLoading, setRevenueLoading] = useState(false);
-	const [revenueError, setRevenueError] = useState<string | null>(null);
+	const [chartType, setChartType] = useState<
+		"auto" | "hour" | "day" | "week" | "month" | "quarter" | "year"
+	>("auto");
+	const [dateError, setDateError] = useState<string | null>(null);
 
 	const { data, loading, error, fetchDashboard } = useDashboardStore();
 
@@ -104,35 +95,6 @@ export default function DashboardPage() {
 			void fetchDashboard({ filter });
 		}
 	}, [filter, fetchDashboard]);
-
-	const fetchRevenueReport = async () => {
-		if (
-			!revenueStartDate ||
-			!revenueEndDate ||
-			revenueStartDate > revenueEndDate
-		) {
-			setRevenueError("Vui lòng chọn khoảng ngày hợp lệ.");
-			return;
-		}
-
-		setRevenueLoading(true);
-		setRevenueError(null);
-		try {
-			const report = await getRevenueReport({
-				startDate: revenueStartDate,
-				endDate: revenueEndDate,
-				type: revenueType,
-			});
-			setRevenueReport(report);
-		} catch (requestError: any) {
-			setRevenueError(
-				requestError.response?.data?.message ||
-					"Không thể tải báo cáo doanh thu.",
-			);
-		} finally {
-			setRevenueLoading(false);
-		}
-	};
 
 	if (loading) {
 		return (
@@ -156,17 +118,38 @@ export default function DashboardPage() {
 		);
 	}
 
-	const { metrics, revenueByCategory, topSellingProducts, lowStockProducts } =
-		data;
+	const {
+		metrics,
+		revenueByMonth,
+		revenueByCategory,
+		topSellingProducts,
+		lowStockProducts,
+	} = data;
 
 	const getFilterText = () => {
 		if (filter === "today") return "so với hôm qua";
 		if (filter === "week") return "so với tuần trước";
 		if (filter === "month") return "so với tháng trước";
+		if (filter === "quarter") return "so với quý trước";
 		if (filter === "year") return "so với năm trước";
 		if (filter === "all") return "toàn thời gian";
 		if (filter === "custom") return "trong khoảng thời gian này";
 		return "";
+	};
+
+	const todayStr = new Date().toISOString().split("T")[0];
+
+	const handleCustomFilterApply = () => {
+		if (!startDate || !endDate) {
+			setDateError("Vui lòng chọn cả ngày bắt đầu và kết thúc");
+			return;
+		}
+		if (startDate > endDate) {
+			setDateError("Ngày bắt đầu không được lớn hơn ngày kết thúc");
+			return;
+		}
+		setDateError(null);
+		void fetchDashboard({ filter, startDate, endDate, chartType });
 	};
 
 	// Prepare pie chart config dynamically based on received categories
@@ -186,6 +169,18 @@ export default function DashboardPage() {
 			icon: DollarSign,
 			iconBg: "bg-emerald-500/10",
 			iconColor: "text-emerald-600",
+			trendIcon:
+				metrics.revenueChangePercentage > 0
+					? TrendingUp
+					: metrics.revenueChangePercentage < 0
+						? TrendingDown
+						: Minus,
+			trendColor:
+				metrics.revenueChangePercentage > 0
+					? "text-emerald-600"
+					: metrics.revenueChangePercentage < 0
+						? "text-red-600"
+						: "text-gray-500",
 		},
 		{
 			title: "Đơn Hàng Mới",
@@ -194,6 +189,18 @@ export default function DashboardPage() {
 			icon: ShoppingCart,
 			iconBg: "bg-blue-500/10",
 			iconColor: "text-blue-600",
+			trendIcon:
+				metrics.ordersChangePercentage > 0
+					? TrendingUp
+					: metrics.ordersChangePercentage < 0
+						? TrendingDown
+						: Minus,
+			trendColor:
+				metrics.ordersChangePercentage > 0
+					? "text-emerald-600"
+					: metrics.ordersChangePercentage < 0
+						? "text-red-600"
+						: "text-gray-500",
 		},
 		{
 			title: "Người Dùng Hoạt Động",
@@ -202,6 +209,18 @@ export default function DashboardPage() {
 			icon: Users,
 			iconBg: "bg-violet-500/10",
 			iconColor: "text-violet-600",
+			trendIcon:
+				metrics.usersChangePercentage > 0
+					? TrendingUp
+					: metrics.usersChangePercentage < 0
+						? TrendingDown
+						: Minus,
+			trendColor:
+				metrics.usersChangePercentage > 0
+					? "text-emerald-600"
+					: metrics.usersChangePercentage < 0
+						? "text-red-600"
+						: "text-gray-500",
 		},
 		{
 			title: "Tổng Sản Phẩm",
@@ -210,6 +229,9 @@ export default function DashboardPage() {
 			icon: Package,
 			iconBg: "bg-amber-500/10",
 			iconColor: "text-amber-600",
+			trendIcon: metrics.newProductsCount > 0 ? TrendingUp : Minus,
+			trendColor:
+				metrics.newProductsCount > 0 ? "text-emerald-600" : "text-gray-500",
 		},
 	];
 
@@ -229,40 +251,74 @@ export default function DashboardPage() {
 						onValueChange={(v: any) => setFilter(v)}
 						className="w-full lg:w-auto"
 					>
-						<TabsList className="grid w-full grid-cols-3 lg:flex lg:flex-wrap h-auto">
+						<TabsList className="grid w-full grid-cols-4 lg:flex lg:flex-wrap h-auto gap-1">
 							<TabsTrigger value="today">Hôm nay</TabsTrigger>
-							<TabsTrigger value="week">Tuần này</TabsTrigger>
-							<TabsTrigger value="month">Tháng này</TabsTrigger>
-							<TabsTrigger value="year">Năm nay</TabsTrigger>
+							<TabsTrigger value="week">Tuần</TabsTrigger>
+							<TabsTrigger value="month">Tháng</TabsTrigger>
+							<TabsTrigger value="quarter">Quý</TabsTrigger>
+							<TabsTrigger value="year">Năm</TabsTrigger>
 							<TabsTrigger value="all">Tất cả</TabsTrigger>
 							<TabsTrigger value="custom">Tuỳ chọn</TabsTrigger>
 						</TabsList>
 					</Tabs>
 
 					{filter === "custom" && (
-						<div className="flex items-center gap-2">
-							<input
-								type="date"
-								value={startDate}
-								max={endDate || undefined}
-								onChange={(e) => setStartDate(e.target.value)}
-								className="border rounded-md px-2 py-1 text-sm bg-background"
-							/>
-							<span className="text-muted-foreground">-</span>
-							<input
-								type="date"
-								value={endDate}
-								min={startDate || undefined}
-								onChange={(e) => setEndDate(e.target.value)}
-								className="border rounded-md px-2 py-1 text-sm bg-background"
-							/>
-							<Button
-								size="sm"
-								onClick={() => fetchDashboard({ filter, startDate, endDate })}
-								disabled={!startDate || !endDate || startDate > endDate}
-							>
-								Áp dụng
-							</Button>
+						<div className="flex flex-col gap-2 mt-2">
+							<div className="flex flex-wrap items-center gap-2">
+								<div className="flex items-center gap-2">
+									<span className="text-sm font-medium text-muted-foreground">
+										Biểu đồ theo:
+									</span>
+									<select
+										value={chartType}
+										onChange={(e) => setChartType(e.target.value as any)}
+										className="h-9 border rounded-md px-2 py-1 text-sm bg-background"
+									>
+										<option value="auto">Tự động</option>
+										<option value="day">Ngày</option>
+										<option value="week">Tuần</option>
+										<option value="month">Tháng</option>
+										<option value="quarter">Quý</option>
+										<option value="year">Năm</option>
+									</select>
+								</div>
+								<div className="hidden sm:block text-muted-foreground mx-2">
+									|
+								</div>
+								<div className="flex items-center gap-2">
+									<input
+										type="date"
+										value={startDate}
+										max={endDate || todayStr}
+										onChange={(e) => {
+											setStartDate(e.target.value);
+											setDateError(null);
+										}}
+										className="h-9 border rounded-md px-2 py-1 text-sm bg-background"
+									/>
+									<span className="text-muted-foreground">-</span>
+									<input
+										type="date"
+										value={endDate}
+										min={startDate || undefined}
+										max={todayStr}
+										onChange={(e) => {
+											setEndDate(e.target.value);
+											setDateError(null);
+										}}
+										className="h-9 border rounded-md px-2 py-1 text-sm bg-background"
+									/>
+									<Button size="sm" onClick={handleCustomFilterApply}>
+										Áp dụng
+									</Button>
+								</div>
+							</div>
+							{dateError && (
+								<span className="text-xs text-red-500 font-medium ml-1 flex items-center gap-1">
+									<AlertCircle className="h-3 w-3" />
+									{dateError}
+								</span>
+							)}
 						</div>
 					)}
 				</div>
@@ -285,11 +341,9 @@ export default function DashboardPage() {
 						<CardContent>
 							<div className="text-2xl font-bold">{card.value}</div>
 							<div
-								className={`mt-1 flex items-center gap-1 text-xs ${card.change.startsWith("-") ? "text-red-600" : "text-emerald-600"}`}
+								className={`mt-1 flex items-center gap-1 text-xs ${card.trendColor}`}
 							>
-								<TrendingUp
-									className={`h-3 w-3 ${card.change.startsWith("-") ? "rotate-180" : ""}`}
-								/>
+								<card.trendIcon className="h-3 w-3" />
 								<span>{card.change}</span>
 							</div>
 						</CardContent>
@@ -303,81 +357,26 @@ export default function DashboardPage() {
 				<Card className="lg:col-span-4">
 					<CardHeader className="gap-4">
 						<div>
-							<CardTitle>
-								Doanh thu theo{" "}
-								{revenueType === "MONTH"
-									? "tháng"
-									: revenueType === "QUARTER"
-										? "quý"
-										: "năm"}
-							</CardTitle>
+							<CardTitle>Biểu đồ Doanh thu</CardTitle>
 							<CardDescription>
-								Chọn loại báo cáo và khoảng thời gian để xem doanh thu đơn đã
-								giao.
+								Doanh thu theo thời gian đã chọn trong bộ lọc tổng quan.
 							</CardDescription>
-						</div>
-						<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-							<select
-								value={revenueType}
-								onChange={(event) =>
-									setRevenueType(event.target.value as RevenueReportType)
-								}
-								className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-								aria-label="Loại báo cáo doanh thu"
-							>
-								<option value="MONTH">Theo tháng</option>
-								<option value="QUARTER">Theo quý</option>
-								<option value="YEAR">Theo năm</option>
-							</select>
-							<input
-								type="date"
-								value={revenueStartDate}
-								min={revenueStartMinDate}
-								max={revenueEndDate || currentYearEndDate}
-								onChange={(event) => setRevenueStartDate(event.target.value)}
-								className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-								aria-label="Ngày bắt đầu báo cáo doanh thu"
-							/>
-							<input
-								type="date"
-								value={revenueEndDate}
-								min={revenueStartDate || revenueStartMinDate}
-								max={currentYearEndDate}
-								onChange={(event) => setRevenueEndDate(event.target.value)}
-								className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-								aria-label="Ngày kết thúc báo cáo doanh thu"
-							/>
-							<Button
-								size="sm"
-								onClick={() => void fetchRevenueReport()}
-								disabled={
-									revenueLoading || !revenueStartDate || !revenueEndDate
-								}
-							>
-								{revenueLoading && (
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-								)}
-								Áp dụng
-							</Button>
 						</div>
 					</CardHeader>
 					<CardContent>
-						{revenueError && (
-							<p className="mb-3 text-sm text-destructive">{revenueError}</p>
-						)}
-						{!revenueLoading && revenueReport.length === 0 ? (
-							<div className="flex min-h-75 items-center justify-center text-sm text-muted-foreground">
-								Chọn khoảng ngày rồi nhấn Áp dụng để tải biểu đồ.
+						{revenueByMonth.length === 0 ? (
+							<div className="flex min-h-[300px] items-center justify-center text-sm text-muted-foreground">
+								Chưa có dữ liệu
 							</div>
 						) : (
 							<ChartContainer
 								config={barChartConfig}
-								className="min-h-75 w-full"
+								className="min-h-[300px] w-full"
 							>
-								<BarChart data={revenueReport}>
+								<BarChart data={revenueByMonth}>
 									<CartesianGrid vertical={false} />
 									<XAxis
-										dataKey="label"
+										dataKey="month"
 										tickLine={false}
 										axisLine={false}
 										tickMargin={8}
@@ -386,11 +385,31 @@ export default function DashboardPage() {
 										tickLine={false}
 										axisLine={false}
 										tickMargin={8}
-										tickFormatter={(value: number) =>
-											`${(value / 1_000_000).toFixed(0)}M`
+										tickFormatter={(value: number) => {
+											if (value >= 1_000_000)
+												return `${(value / 1_000_000).toFixed(1)}tr`;
+											if (value >= 1_000)
+												return `${(value / 1_000).toFixed(0)}k`;
+											return value.toString();
+										}}
+									/>
+									<ChartTooltip
+										content={
+											<ChartTooltipContent
+												formatter={(value) => (
+													<div className="flex items-center gap-2">
+														<div className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-[--color-revenue]" />
+														<span className="text-muted-foreground">
+															Doanh thu
+														</span>
+														<span className="font-mono font-medium text-foreground tabular-nums ml-auto">
+															{formatCurrency(Number(value))}
+														</span>
+													</div>
+												)}
+											/>
 										}
 									/>
-									<ChartTooltip content={<ChartTooltipContent />} />
 									<Bar
 										dataKey="revenue"
 										fill="var(--color-revenue)"
@@ -411,31 +430,61 @@ export default function DashboardPage() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<ChartContainer
-							config={pieChartConfig}
-							className="mx-auto min-h-75 w-full"
-						>
-							<PieChart>
-								<ChartTooltip content={<ChartTooltipContent />} />
-								<Pie
-									data={revenueByCategory}
-									dataKey="value"
-									nameKey="name"
-									innerRadius={60}
-									paddingAngle={2}
-									strokeWidth={2}
-									stroke="transparent"
-								>
-									{revenueByCategory.map((entry, index) => (
-										<Cell
-											key={entry.name}
-											fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
-										/>
-									))}
-								</Pie>
-								<ChartLegend content={<ChartLegendContent nameKey="name" />} />
-							</PieChart>
-						</ChartContainer>
+						{revenueByCategory.length === 0 ? (
+							<div className="flex min-h-[300px] items-center justify-center text-sm text-muted-foreground">
+								Chưa có dữ liệu
+							</div>
+						) : (
+							<ChartContainer
+								config={pieChartConfig}
+								className="mx-auto min-h-[300px] w-full"
+							>
+								<PieChart>
+									<ChartTooltip
+										content={
+											<ChartTooltipContent
+												formatter={(value, name) => (
+													<div className="flex items-center gap-2">
+														<div
+															className="h-2.5 w-2.5 shrink-0 rounded-full"
+															style={{
+																backgroundColor:
+																	pieChartConfig[name as string]?.color,
+															}}
+														/>
+														<span className="text-muted-foreground">
+															{name}
+														</span>
+														<span className="font-mono font-medium text-foreground tabular-nums ml-auto">
+															{formatCurrency(Number(value))}
+														</span>
+													</div>
+												)}
+											/>
+										}
+									/>
+									<Pie
+										data={revenueByCategory}
+										dataKey="value"
+										nameKey="name"
+										innerRadius={60}
+										paddingAngle={2}
+										strokeWidth={2}
+										stroke="transparent"
+									>
+										{revenueByCategory.map((entry, index) => (
+											<Cell
+												key={entry.name}
+												fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+											/>
+										))}
+									</Pie>
+									<ChartLegend
+										content={<ChartLegendContent nameKey="name" />}
+									/>
+								</PieChart>
+							</ChartContainer>
+						)}
 					</CardContent>
 				</Card>
 			</div>
@@ -458,17 +507,30 @@ export default function DashboardPage() {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{topSellingProducts.map((product) => (
-									<TableRow key={product.id}>
-										<TableCell className="font-medium">
-											{product.name}
-										</TableCell>
-										<TableCell className="text-right">{product.sold}</TableCell>
-										<TableCell className="text-right">
-											{formatCurrency(product.revenue)}
+								{topSellingProducts.length === 0 ? (
+									<TableRow>
+										<TableCell
+											colSpan={3}
+											className="text-center text-muted-foreground h-24"
+										>
+											Chưa có dữ liệu
 										</TableCell>
 									</TableRow>
-								))}
+								) : (
+									topSellingProducts.map((product) => (
+										<TableRow key={product.id}>
+											<TableCell className="font-medium">
+												{product.name}
+											</TableCell>
+											<TableCell className="text-right">
+												{product.sold}
+											</TableCell>
+											<TableCell className="text-right">
+												{formatCurrency(product.revenue)}
+											</TableCell>
+										</TableRow>
+									))
+								)}
 							</TableBody>
 						</Table>
 					</CardContent>
@@ -491,28 +553,39 @@ export default function DashboardPage() {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{lowStockProducts.map((product) => (
-									<TableRow key={product.id}>
-										<TableCell className="font-medium">
-											{product.name}
-										</TableCell>
-										<TableCell className="text-right">
-											{product.stock}
-										</TableCell>
-										<TableCell>
-											<Badge
-												variant="destructive"
-												className={
-													product.stock === 0
-														? "bg-red-600 text-white"
-														: "bg-amber-500 text-slate-900"
-												}
-											>
-												{product.status}
-											</Badge>
+								{lowStockProducts.length === 0 ? (
+									<TableRow>
+										<TableCell
+											colSpan={3}
+											className="text-center text-muted-foreground h-24"
+										>
+											Chưa có dữ liệu
 										</TableCell>
 									</TableRow>
-								))}
+								) : (
+									lowStockProducts.map((product) => (
+										<TableRow key={product.id}>
+											<TableCell className="font-medium">
+												{product.name}
+											</TableCell>
+											<TableCell className="text-right">
+												{product.stock}
+											</TableCell>
+											<TableCell>
+												<Badge
+													variant="destructive"
+													className={
+														product.stock === 0
+															? "bg-red-600 text-white hover:bg-red-700"
+															: "bg-amber-500 text-slate-900 hover:bg-amber-600"
+													}
+												>
+													{product.status}
+												</Badge>
+											</TableCell>
+										</TableRow>
+									))
+								)}
 							</TableBody>
 						</Table>
 					</CardContent>
