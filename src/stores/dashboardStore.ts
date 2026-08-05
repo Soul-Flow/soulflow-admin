@@ -2,6 +2,7 @@ import { toast } from "sonner";
 import { create } from "zustand";
 import {
 	type DashboardData,
+	type DashboardFilter,
 	type DashboardQueryParams,
 	getDashboardSummary,
 } from "@/services/dashboardService";

@@ -16,6 +16,11 @@ export interface RevenueByMonth {
 	revenue: number;
 }
 
+export interface RevenueByMonth {
+	month: string;
+	revenue: number;
+}
+
 export interface RevenueByCategory {
 	name: string;
 	value: number;
@@ -53,6 +58,7 @@ export type DashboardFilter =
 	| "today"
 	| "week"
 	| "month"
+	| "quarter"
 	| "year"
 	| "all"
 	| "custom";
@@ -61,6 +67,7 @@ export interface DashboardQueryParams {
 	filter?: DashboardFilter;
 	startDate?: string;
 	endDate?: string;
+	chartType?: "auto" | "hour" | "day" | "week" | "month" | "quarter" | "year";
 }
 
 export const getDashboardSummary = async (
