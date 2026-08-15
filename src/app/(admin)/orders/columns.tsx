@@ -157,7 +157,7 @@ function StatusCell({
 			disabled={isUpdating}
 		>
 			<SelectTrigger
-				className={`h-7 w-[130px] text-xs font-medium ${config.className}`}
+				className={`h-8.5 w-[140px] text-xs font-semibold ${config.className}`}
 			>
 				<SelectValue />
 			</SelectTrigger>
@@ -465,36 +465,36 @@ export function columns({
 		},
 		{
 			accessorKey: "code",
-			header: "Mã đơn hàng",
+			header: "Mã Đơn",
 			cell: ({ row }) => (
-				<span className="font-mono text-xs font-medium">
+				<span className="font-mono text-sm font-semibold text-foreground">
 					{row.getValue("code")}
 				</span>
 			),
 		},
 		{
 			accessorKey: "fullname",
-			header: "Khách hàng",
+			header: "Khách Hàng",
 			cell: ({ row }) => (
-				<span className="font-medium max-w-[150px] truncate inline-block align-middle">
+				<span className="font-semibold text-sm sm:text-base text-foreground max-w-[180px] truncate inline-block align-middle">
 					{row.getValue("fullname")}
 				</span>
 			),
 		},
 		{
 			accessorKey: "phone",
-			header: "Điện thoại",
+			header: "Điện Thoại",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground">{row.getValue("phone")}</span>
+				<span className="text-sm font-medium text-muted-foreground">{row.getValue("phone")}</span>
 			),
 		},
 		{
 			accessorKey: "total",
-			header: "Tổng tiền",
+			header: "Tổng Tiền",
 			cell: ({ row }) => {
 				const amount = parseFloat(row.getValue("total"));
 				return (
-					<span className="font-medium tabular-nums text-primary">
+					<span className="font-bold text-sm sm:text-base tabular-nums text-primary">
 						{new Intl.NumberFormat("vi-VN", {
 							style: "currency",
 							currency: "VND",
@@ -505,7 +505,7 @@ export function columns({
 		},
 		{
 			accessorKey: "shippingFee",
-			header: "Phí ship",
+			header: "Phí Ship",
 			cell: ({ row }) => {
 				const amount = parseFloat(row.getValue("shippingFee") || "0");
 				return (
@@ -520,13 +520,13 @@ export function columns({
 		},
 		{
 			accessorKey: "paymentMethod",
-			header: "Thanh toán",
+			header: "Thanh Toán",
 			cell: ({ row }) => {
 				const method = row.getValue("paymentMethod") as string;
 				return (
 					<Badge
 						variant="outline"
-						className="bg-slate-500/15 text-slate-700 border-slate-500/25 dark:text-slate-400 uppercase"
+						className="bg-slate-500/15 text-slate-700 border-slate-500/25 dark:text-slate-400 text-xs px-2.5 py-1 font-semibold uppercase"
 					>
 						{method || "COD"}
 					</Badge>
@@ -535,9 +535,9 @@ export function columns({
 		},
 		{
 			accessorKey: "createdDate",
-			header: "Ngày đặt",
+			header: "Ngày Đặt",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground">
+				<span className="text-sm text-muted-foreground">
 					{row.getValue("createdDate")}
 				</span>
 			),

@@ -82,11 +82,20 @@ function ProcessingStationPageContent() {
 			{/* Header */}
 			<div className="flex items-center justify-between pb-4 border-b mb-4 shrink-0">
 				<div>
-					<h1 className="text-2xl font-bold tracking-tight">
-						Xử Lý Đơn Hàng
-					</h1>
-					<p className="text-muted-foreground">
-						Khu vực xử lý nhanh các đơn hàng đang hoạt động.
+					<div className="flex items-center gap-2.5">
+						<h1 className="text-2xl font-bold tracking-tight">
+							Trạm Xử Lý Đơn Hàng
+						</h1>
+						<div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 dark:text-emerald-400">
+							<span className="relative flex h-2 w-2">
+								<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+								<span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+							</span>
+							<span>Trực Tiếp</span>
+						</div>
+					</div>
+					<p className="text-sm text-muted-foreground mt-0.5">
+						Khu vực kiểm soát và chuyển trạng thái nhanh các đơn hàng theo thời gian thực.
 					</p>
 				</div>
 				<Button
@@ -94,14 +103,14 @@ function ProcessingStationPageContent() {
 					size="sm"
 					onClick={() => loadOrders(true)}
 					disabled={loading}
-					className="flex items-center gap-2"
+					className="flex items-center gap-2 font-medium"
 				>
 					{loading ? (
 						<Loader2 className="h-4 w-4 animate-spin" />
 					) : (
 						<RefreshCcw className="h-4 w-4" />
 					)}
-					Làm mới dữ liệu
+					Làm mới
 				</Button>
 			</div>
 

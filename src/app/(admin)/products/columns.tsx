@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Edit, Eye, ImagePlus, MoreHorizontal, Trash, X } from "lucide-react";
+import { Edit, Eye, Flower2, ImagePlus, MoreHorizontal, Trash, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -135,7 +135,7 @@ function StatusCell({
 			disabled={isUpdating}
 		>
 			<SelectTrigger
-				className={`h-7 w-[130px] text-xs font-medium ${isAvailable ? "bg-green-600/15 text-green-700 border-green-600/25 dark:text-green-400" : "bg-slate-500/15 text-slate-700 border-slate-500/25 dark:text-slate-400"}`}
+				className={`h-8.5 w-[135px] text-xs font-medium ${isAvailable ? "bg-green-600/15 text-green-700 border-green-600/25 dark:text-green-400" : "bg-slate-500/15 text-slate-700 border-slate-500/25 dark:text-slate-400"}`}
 			>
 				<SelectValue />
 			</SelectTrigger>
@@ -704,40 +704,54 @@ export function columns({
 			accessorKey: "code",
 			header: "Mã",
 			cell: ({ row }) => (
-				<span className="font-mono text-xs">{row.getValue("code")}</span>
+				<span className="font-mono text-xs font-semibold text-muted-foreground">{row.getValue("code")}</span>
 			),
 		},
 		{
 			accessorKey: "nameVn",
-			header: "Tên Sản Phẩm(VN)",
-			cell: ({ row }) => (
-				<div
-					className="max-w-[200px] truncate font-medium"
-					title={row.getValue("nameVn")}
-				>
-					{row.getValue("nameVn")}
-				</div>
-			),
-		},
-		{
-			accessorKey: "nameEng",
-			header: "Tên Sản Phẩm(EN)",
-			cell: ({ row }) => (
-				<div
-					className="max-w-[200px] truncate font-medium"
-					title={row.getValue("nameEng")}
-				>
-					{row.getValue("nameEng")}
-				</div>
-			),
+			header: "Sản Phẩm",
+			cell: ({ row }) => {
+				const product = row.original;
+				const imageUrl = product.productImageResponses?.[0]?.url;
+				return (
+					<div className="flex items-center gap-3 max-w-[320px]">
+						<div className="h-12 w-12 shrink-0 rounded-xl overflow-hidden border bg-muted/50 flex items-center justify-center shadow-2xs">
+							{imageUrl ? (
+								<img
+									src={imageUrl}
+									alt={product.nameVn}
+									className="h-full w-full object-cover"
+									loading="lazy"
+								/>
+							) : (
+								<Flower2 className="h-5 w-5 text-muted-foreground/60" />
+							)}
+						</div>
+						<div className="flex flex-col min-w-0">
+							<span
+								className="font-semibold text-sm sm:text-base text-foreground truncate"
+								title={product.nameVn}
+							>
+								{product.nameVn}
+							</span>
+							<span
+								className="text-xs text-muted-foreground truncate"
+								title={product.nameEng}
+							>
+								{product.nameEng}
+							</span>
+						</div>
+					</div>
+				);
+			},
 		},
 		{
 			accessorKey: "price",
-			header: "Giá (VNĐ)",
+			header: "Giá Bán",
 			cell: ({ row }) => {
 				const amount = parseFloat(row.getValue("price"));
 				return (
-					<span className="font-medium tabular-nums">
+					<span className="font-bold text-sm sm:text-base tabular-nums text-foreground">
 						{new Intl.NumberFormat("vi-VN", {
 							style: "currency",
 							currency: "VND",
@@ -748,11 +762,25 @@ export function columns({
 		},
 		{
 			accessorKey: "quantity",
-			header: "Tồn kho",
+			header: "Tồn Kho",
 			cell: ({ row }) => {
-				const qty = parseInt(row.getValue("quantity"), 10);
+				const qty = parseInt(row.getValue("quantity"), 10) || 0;
+				if (qty === 0) {
+					return (
+						<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-destructive/15 text-destructive border border-destructive/20">
+							Hết hàng
+						</span>
+					);
+				}
+				if (qty < 10) {
+					return (
+						<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25">
+							{qty} (Sắp hết)
+						</span>
+					);
+				}
 				return (
-					<span className={`font-medium ${qty < 10 ? "text-destructive" : ""}`}>
+					<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
 						{qty}
 					</span>
 				);
@@ -760,9 +788,9 @@ export function columns({
 		},
 		{
 			accessorKey: "sales",
-			header: "Đã bán",
+			header: "Đã Bán",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground">{row.getValue("sales")}</span>
+				<span className="text-sm font-medium text-muted-foreground">{row.getValue("sales") || 0}</span>
 			),
 		},
 		{
