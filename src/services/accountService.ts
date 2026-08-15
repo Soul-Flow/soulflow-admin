@@ -10,10 +10,7 @@ import api from "../lib/api";
 
 export const accountService = {
 	login: async (request: AuthRequest): Promise<AuthResponse> => {
-		const response = await api.post<AuthResponse>(
-			"http://localhost:8080/login",
-			request,
-		);
+		const response = await api.post<AuthResponse>("/login", request);
 
 		return response.data;
 	},

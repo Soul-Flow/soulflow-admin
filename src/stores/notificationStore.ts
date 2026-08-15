@@ -3,6 +3,8 @@ import SockJS from "sockjs-client";
 import { toast } from "sonner";
 import { create } from "zustand";
 
+import { getApiBaseUrl } from "@/lib/api";
+
 export interface NotificationMessage {
 	type: "LOW_STOCK" | "ORDER_PAID";
 	title: string;
@@ -41,7 +43,7 @@ const useNotificationStore = create<NotificationState>((set, get) => ({
 				? localStorage.getItem("admin_token")
 				: null;
 
-		const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+		const baseUrl = getApiBaseUrl();
 
 		const client = new Client({
 			// Using SockJS wrapper instead of native brokerURL
