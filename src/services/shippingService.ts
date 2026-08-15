@@ -1,4 +1,4 @@
-import api from "../lib/api";
+import api, { getApiBaseUrl } from "../lib/api";
 
 export interface CalculateFeeResponse {
 	total: number;
@@ -18,9 +18,7 @@ export const shippingService = {
 				weight: 2000,
 			},
 			{
-				baseURL: api.defaults.baseURL
-					? api.defaults.baseURL.replace("/admin", "")
-					: "http://localhost:8080",
+				baseURL: getApiBaseUrl(),
 			},
 		);
 

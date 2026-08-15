@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const nextConfig = {
+const nextConfig: NextConfig = {
 	output: "standalone",
 	eslint: {
 		ignoreDuringBuilds: true,
@@ -8,9 +8,45 @@ const nextConfig = {
 	typescript: {
 		ignoreBuildErrors: true,
 	},
-	/* config options here */
-	// @ts-expect-error
-	allowedDevOrigins: ["shrubbery-surprise-dish.ngrok-free.dev"],
+	images: {
+		unoptimized: true,
+		remotePatterns: [
+			{
+				protocol: "https",
+				hostname: "images.unsplash.com",
+				pathname: "/**",
+			},
+			{
+				protocol: "https",
+				hostname: "**.googleusercontent.com",
+			},
+			{
+				protocol: "http",
+				hostname: "**.googleusercontent.com",
+			},
+			{
+				protocol: "https",
+				hostname: "qr.sepay.vn",
+				pathname: "/**",
+			},
+			{
+				protocol: "http",
+				hostname: "localhost",
+				port: "9000",
+				pathname: "/**",
+			},
+			{
+				protocol: "https",
+				hostname: "s3.souflow.shop",
+				pathname: "/**",
+			},
+			{
+				protocol: "http",
+				hostname: "s3.souflow.shop",
+				pathname: "/**",
+			},
+		],
+	},
 };
 
 export default nextConfig;

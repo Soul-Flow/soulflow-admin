@@ -1,7 +1,17 @@
 import axios from "axios";
 
+export const getApiBaseUrl = (): string => {
+	if (process.env.NEXT_PUBLIC_API_URL) {
+		return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, "");
+	}
+	if (typeof window !== "undefined" && window.location.hostname.includes("souflow.shop")) {
+		return `${window.location.protocol}//api.souflow.shop`;
+	}
+	return "http://localhost:8080";
+};
+
 const api = axios.create({
-	baseURL: "http://localhost:8080/admin",
+	baseURL: `${getApiBaseUrl()}/admin`,
 	timeout: 16000,
 });
 
