@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { CategoryResponse } from "@/interfaces/responses/category-response.interface";
 import useCategoryStore from "@/stores/categoryStore";
 
@@ -260,7 +261,7 @@ function ActionCell({
 						<AlertDialogDescription>
 							Bạn có chắc chắn muốn xóa danh mục{" "}
 							<strong>
-								${category.nameVn} - ${category.nameEng}
+								{category.nameVn} - {category.nameEng}
 							</strong>
 							? Tất cả sản phẩm thuộc danh mục này sẽ bị ảnh hưởng. Hành động
 							này không thể hoàn tác.
