@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/table";
 import { OrderStatus } from "@/enums/order-status.enum";
 import type { OrderResponse } from "@/interfaces/responses/order-response.interface";
+import { formatDateTime } from "@/lib/utils";
 import useOrderStore from "@/stores/orderStore";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -74,9 +75,14 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 interface OrderDetailProps {
 	order: OrderResponse | null;
 	onStatusUpdated: () => void;
+	isModal?: boolean;
 }
 
-export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
+export function OrderDetail({
+	order,
+	onStatusUpdated,
+	isModal = false,
+}: OrderDetailProps) {
 	const { updateStatus, deleteByPk } = useOrderStore();
 	const [isUpdating, setIsUpdating] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -87,7 +93,7 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 
 	if (!order) {
 		return (
-			<div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 space-y-4 border-2 border-dashed rounded-xl">
+			<div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 space-y-4 border-2 border-dashed rounded-xl min-h-[300px]">
 				<PackageOpen className="h-16 w-16 opacity-20" />
 				<p>Chọn một đơn hàng bên trái để xem chi tiết và xử lý.</p>
 			</div>
@@ -146,19 +152,33 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 		className: "",
 	};
 
+	const items =
+		order.orderDetailResponses || (order as any).orderDetails || [];
+
 	return (
-		<div className="flex flex-col h-[calc(100vh-140px)]">
+		<div
+			className={
+				isModal
+					? "flex flex-col space-y-4"
+					: "flex flex-col h-[calc(100vh-140px)]"
+			}
+		>
 			{/* Header Actions */}
-			<div className="flex items-center justify-between p-5 border-b bg-card rounded-t-xl shadow-sm">
+			<div className="flex flex-wrap items-center justify-between p-4 border rounded-xl bg-card shadow-2xs gap-3">
 				<div>
-					<h2 className="text-xl font-bold tracking-tight">
-						Chi tiết đơn {order.code}
-					</h2>
-					<p className="text-sm text-muted-foreground mt-1">
-						Ngày đặt: {order.createdDate}
+					<div className="flex items-center gap-2">
+						<h2 className="text-lg font-bold tracking-tight">
+							Đơn #{order.code}
+						</h2>
+						<Badge variant="outline" className={statusInfo.className}>
+							{statusInfo.label}
+						</Badge>
+					</div>
+					<p className="text-xs text-muted-foreground mt-0.5">
+						Ngày đặt: {formatDateTime(order.createdDate)}
 					</p>
 				</div>
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-2 flex-wrap">
 					{/* Complete Order Button (Only visible if PAID or later) */}
 					{[
 						OrderStatus.PAID,
@@ -260,34 +280,46 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 			</div>
 
 			{/* Content */}
-			<div className="flex-1 bg-muted/20 p-5 rounded-b-xl border-x border-b overflow-y-auto">
-				<div className="space-y-6 max-w-4xl mx-auto pb-8">
-					{/* Customer Info */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-4">
-							<h3 className="font-semibold text-lg border-b pb-2">
-								Thông tin khách hàng
+			<div
+				className={
+					isModal
+						? "space-y-4 pt-1"
+						: "flex-1 bg-muted/20 p-5 rounded-b-xl border-x border-b overflow-y-auto"
+				}
+			>
+				<div className="flex-1 space-y-4">
+					{/* Grid 2 Column: Customer Info & Payment Info */}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs space-y-3">
+							<h3 className="font-semibold text-sm border-b pb-2">
+								Thông tin người nhận
 							</h3>
-							<div className="grid grid-cols-3 gap-2">
-								<span className="font-medium text-muted-foreground text-sm">
-									Khách hàng:
+							<div className="grid grid-cols-3 gap-2 text-sm">
+								<span className="font-medium text-muted-foreground text-xs">
+									Người nhận:
 								</span>
-								<span className="col-span-2 font-medium">{order.fullname}</span>
+								<span className="col-span-2 font-semibold text-foreground">
+									{order.fullname || "-"}
+								</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2">
-								<span className="font-medium text-muted-foreground text-sm">
+							<div className="grid grid-cols-3 gap-2 text-sm">
+								<span className="font-medium text-muted-foreground text-xs">
 									Điện thoại:
 								</span>
-								<span className="col-span-2">{order.phone}</span>
+								<span className="col-span-2 font-mono font-medium">
+									{order.phone || "-"}
+								</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2">
-								<span className="font-medium text-muted-foreground text-sm">
+							<div className="grid grid-cols-3 gap-2 text-sm">
+								<span className="font-medium text-muted-foreground text-xs">
 									Địa chỉ:
 								</span>
-								<span className="col-span-2">{order.address?.replace(/\|\|/g, ", ")}</span>
+								<span className="col-span-2">
+									{order.address ? order.address.replace(/\|\|/g, ", ") : "-"}
+								</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2 items-center">
-								<span className="font-medium text-muted-foreground text-sm">
+							<div className="grid grid-cols-3 gap-2 text-sm items-center">
+								<span className="font-medium text-muted-foreground text-xs">
 									Trạng thái:
 								</span>
 								<span className="col-span-2">
@@ -298,25 +330,25 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 							</div>
 						</div>
 
-						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-4">
-							<h3 className="font-semibold text-lg border-b pb-2">
-								Thông tin thanh toán
+						<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs space-y-3">
+							<h3 className="font-semibold text-sm border-b pb-2">
+								Chi tiết thanh toán
 							</h3>
-							<div className="grid grid-cols-3 gap-2">
-								<span className="font-medium text-muted-foreground text-sm">
-									Thanh toán:
+							<div className="grid grid-cols-3 gap-2 text-sm">
+								<span className="font-medium text-muted-foreground text-xs">
+									Hình thức:
 								</span>
 								<span className="col-span-2 uppercase font-medium">
-									<Badge variant="outline">
+									<Badge variant="outline" className="font-semibold">
 										{order.paymentMethod || "COD"}
 									</Badge>
 								</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2">
-								<span className="font-medium text-muted-foreground text-sm">
+							<div className="grid grid-cols-3 gap-2 text-sm">
+								<span className="font-medium text-muted-foreground text-xs">
 									Tạm tính:
 								</span>
-								<span className="col-span-2">
+								<span className="col-span-2 font-mono font-medium">
 									{formatCurrency(
 										parseFloat(order.total) -
 											parseFloat(order.shippingFee || "0") +
@@ -325,29 +357,29 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 								</span>
 							</div>
 							{(order.discountAmount || 0) > 0 && (
-								<div className="grid grid-cols-3 gap-2">
-									<span className="font-medium text-muted-foreground text-sm">
+								<div className="grid grid-cols-3 gap-2 text-sm">
+									<span className="font-medium text-muted-foreground text-xs">
 										Khuyến mãi:
 									</span>
-									<span className="col-span-2 font-medium text-green-600 dark:text-green-400">
+									<span className="col-span-2 font-semibold text-emerald-600 dark:text-emerald-400 font-mono">
 										{order.discountCode ? `[${order.discountCode}] ` : ""}
 										-{formatCurrency(order.discountAmount.toString())}
 									</span>
 								</div>
 							)}
-							<div className="grid grid-cols-3 gap-2">
-								<span className="font-medium text-muted-foreground text-sm">
-									Phí ship:
+							<div className="grid grid-cols-3 gap-2 text-sm">
+								<span className="font-medium text-muted-foreground text-xs">
+									Phí vận chuyển:
 								</span>
-								<span className="col-span-2">
-									{formatCurrency(order.shippingFee)}
+								<span className="col-span-2 font-mono font-medium">
+									{formatCurrency(order.shippingFee || "0")}
 								</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2 pt-2 border-t mt-2">
-								<span className="font-medium text-muted-foreground text-sm">
-									Tổng cộng:
+							<div className="grid grid-cols-3 gap-2 pt-2 border-t mt-1 text-sm">
+								<span className="font-medium text-muted-foreground text-xs">
+									Tổng đơn:
 								</span>
-								<span className="col-span-2 font-bold text-primary text-lg">
+								<span className="col-span-2 font-bold text-primary text-base font-mono">
 									{formatCurrency(order.total)}
 								</span>
 							</div>
@@ -355,48 +387,54 @@ export function OrderDetail({ order, onStatusUpdated }: OrderDetailProps) {
 					</div>
 
 					{/* Order Items */}
-					<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm">
-						<h3 className="font-semibold text-lg border-b pb-4 mb-4">
-							Sản phẩm đã đặt
+					<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs">
+						<h3 className="font-semibold text-sm border-b pb-3 mb-3 flex items-center justify-between">
+							<span>Danh sách sản phẩm hoa</span>
+							<Badge variant="secondary" className="font-mono text-xs">
+								{items.length} món
+							</Badge>
 						</h3>
-						{order.orderDetailResponses &&
-						order.orderDetailResponses.length > 0 ? (
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Sản phẩm</TableHead>
-										<TableHead className="text-right">Đơn giá</TableHead>
-										<TableHead className="text-center">Số lượng</TableHead>
-										<TableHead className="text-right">Thành tiền</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{order.orderDetailResponses.map((item, index) => {
-										const name = item.name || "Sản phẩm";
-										const price = parseFloat(item.price || "0");
-										const qty = parseInt(item.quantity || "1", 10);
-										const total = parseFloat(
-											item.subtotal || (price * qty).toString(),
-										);
-										return (
-											<TableRow key={`detail-item-${index}`}>
-												<TableCell className="font-medium">{name}</TableCell>
-												<TableCell className="text-right text-muted-foreground">
-													{formatCurrency(price)}
-												</TableCell>
-												<TableCell className="text-center font-medium">
-													{qty}
-												</TableCell>
-												<TableCell className="text-right text-primary font-medium">
-													{formatCurrency(total)}
-												</TableCell>
-											</TableRow>
-										);
-									})}
-								</TableBody>
-							</Table>
+						{items.length > 0 ? (
+							<div className="overflow-x-auto">
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead className="text-xs">Sản phẩm</TableHead>
+											<TableHead className="text-right text-xs">Đơn giá</TableHead>
+											<TableHead className="text-center text-xs">Số lượng</TableHead>
+											<TableHead className="text-right text-xs">Thành tiền</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{items.map((item: any, index: number) => {
+											const name = item.name || item.productName || "Sản phẩm";
+											const price = parseFloat(item.price || "0");
+											const qty = parseInt(item.quantity || "1", 10);
+											const total = parseFloat(
+												item.subtotal || (price * qty).toString(),
+											);
+											return (
+												<TableRow key={`detail-item-${index}`}>
+													<TableCell className="font-semibold text-sm">
+														💐 {name}
+													</TableCell>
+													<TableCell className="text-right text-muted-foreground text-sm font-mono">
+														{formatCurrency(price)}
+													</TableCell>
+													<TableCell className="text-center font-bold text-sm">
+														{qty}
+													</TableCell>
+													<TableCell className="text-right text-primary font-bold text-sm font-mono">
+														{formatCurrency(total)}
+													</TableCell>
+												</TableRow>
+											);
+										})}
+									</TableBody>
+								</Table>
+							</div>
 						) : (
-							<div className="text-center py-8 text-muted-foreground text-sm">
+							<div className="text-center py-6 text-muted-foreground text-xs">
 								Không có thông tin chi tiết sản phẩm.
 							</div>
 						)}

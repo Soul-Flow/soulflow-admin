@@ -101,7 +101,7 @@ export function CreateDiscountDialog({ onCreated }: CreateDiscountDialogProps) {
 					Thêm Mã Giảm Giá
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-lg">
+			<DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto p-6">
 				<DialogHeader>
 					<DialogTitle>Tạo Mã Giảm Giá Mới</DialogTitle>
 					<DialogDescription>
@@ -109,47 +109,67 @@ export function CreateDiscountDialog({ onCreated }: CreateDiscountDialogProps) {
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-2">
-					<div className="grid gap-2">
-						<Label htmlFor="d-code">Mã Khuyến Mãi</Label>
-						<Input
-							id="d-code"
-							placeholder="VD: SUMMER10 (Bỏ trống sẽ tạo ngẫu nhiên)"
-							{...register("code")}
-							aria-invalid={!!errors.code}
-						/>
-						{errors.code && (
-							<p className="text-xs text-destructive">
-								{errors.code.message}
-							</p>
-						)}
+				<form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="d-code">Mã Khuyến Mãi</Label>
+							<Input
+								id="d-code"
+								placeholder="VD: SUMMER10 (Bỏ trống = tự sinh)"
+								{...register("code")}
+								aria-invalid={!!errors.code}
+							/>
+							{errors.code && (
+								<p className="text-xs text-destructive">
+									{errors.code.message}
+								</p>
+							)}
+						</div>
+
+						<div className="grid gap-2">
+							<Label htmlFor="d-percentage">Phần trăm giảm (%) *</Label>
+							<Input
+								id="d-percentage"
+								type="number"
+								placeholder="VD: 15"
+								{...register("percentage", { valueAsNumber: true })}
+								aria-invalid={!!errors.percentage}
+							/>
+							{errors.percentage && (
+								<p className="text-xs text-destructive">
+									{errors.percentage.message}
+								</p>
+							)}
+						</div>
 					</div>
 
-					<div className="grid gap-2">
-						<Label htmlFor="d-descVn">Mô tả (VN) *</Label>
-						<Input
-							id="d-descVn"
-							placeholder="VD: Giảm giá mùa hè"
-							{...register("descriptionVn")}
-							aria-invalid={!!errors.descriptionVn}
-						/>
-						{errors.descriptionVn && (
-							<p className="text-xs text-destructive">
-								{errors.descriptionVn.message}
-							</p>
-						)}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="d-descVn">Mô tả (VN) *</Label>
+							<Input
+								id="d-descVn"
+								placeholder="VD: Giảm giá mùa hè"
+								{...register("descriptionVn")}
+								aria-invalid={!!errors.descriptionVn}
+							/>
+							{errors.descriptionVn && (
+								<p className="text-xs text-destructive">
+									{errors.descriptionVn.message}
+								</p>
+							)}
+						</div>
+
+						<div className="grid gap-2">
+							<Label htmlFor="d-descEng">Mô tả (EN)</Label>
+							<Input
+								id="d-descEng"
+								placeholder="VD: Summer discount"
+								{...register("descriptionEng")}
+							/>
+						</div>
 					</div>
 
-					<div className="grid gap-2">
-						<Label htmlFor="d-descEng">Mô tả (EN)</Label>
-						<Input
-							id="d-descEng"
-							placeholder="VD: Summer discount"
-							{...register("descriptionEng")}
-						/>
-					</div>
-
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div className="grid gap-2">
 							<Label htmlFor="d-minOrderAmount">Đơn tối thiểu (VNĐ) *</Label>
 							<Input
@@ -165,6 +185,7 @@ export function CreateDiscountDialog({ onCreated }: CreateDiscountDialogProps) {
 								</p>
 							)}
 						</div>
+
 						<div className="grid gap-2">
 							<Label htmlFor="d-usageLimit">Số lượt dùng tối đa *</Label>
 							<Input
@@ -183,22 +204,6 @@ export function CreateDiscountDialog({ onCreated }: CreateDiscountDialogProps) {
 					</div>
 
 					<div className="grid gap-2">
-						<Label htmlFor="d-percentage">Phần trăm giảm (%) *</Label>
-						<Input
-							id="d-percentage"
-							type="number"
-							placeholder="VD: 15"
-							{...register("percentage", { valueAsNumber: true })}
-							aria-invalid={!!errors.percentage}
-						/>
-						{errors.percentage && (
-							<p className="text-xs text-destructive">
-								{errors.percentage.message}
-							</p>
-						)}
-					</div>
-
-					<div className="grid gap-2">
 						<Label htmlFor="d-expiredDate">Ngày hết hạn *</Label>
 						<Input
 							id="d-expiredDate"
@@ -213,7 +218,7 @@ export function CreateDiscountDialog({ onCreated }: CreateDiscountDialogProps) {
 						)}
 					</div>
 
-					<DialogFooter>
+					<DialogFooter className="pt-2">
 						<Button
 							type="button"
 							variant="outline"

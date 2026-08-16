@@ -50,6 +50,8 @@ import {
 } from "@/components/ui/table";
 import { OrderStatus } from "@/enums/order-status.enum";
 import type { OrderResponse } from "@/interfaces/responses/order-response.interface";
+import { formatCurrency } from "@/lib/numberUtils";
+import { formatDateTime } from "@/lib/utils";
 import useOrderStore from "@/stores/orderStore";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -256,164 +258,178 @@ function ActionCell({
 			</DropdownMenu>
 
 			<Sheet open={showViewSheet} onOpenChange={handleOpenChange}>
-				<SheetContent className="overflow-y-auto">
-					<SheetHeader>
-						<SheetTitle>Chi Tiết Đơn Hàng</SheetTitle>
-						<SheetDescription>Mã đơn: {order.code}</SheetDescription>
+				<SheetContent className="overflow-y-auto w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl p-6">
+					<SheetHeader className="pb-3 border-b">
+						<SheetTitle className="text-xl font-bold flex items-center gap-2">
+							<span>Chi Tiết Đơn Hàng #{order.code}</span>
+							<Badge variant="outline" className={statusInfo.className}>
+								{statusInfo.label}
+							</Badge>
+						</SheetTitle>
+						<SheetDescription>
+							Ngày tạo đơn: {formatDateTime(order.createdDate)} {order.expiredDate ? `• Hết hạn: ${formatDateTime(order.expiredDate)}` : ""}
+						</SheetDescription>
 					</SheetHeader>
-					<div className="mt-6 px-4 pb-6 space-y-4 text-sm">
-						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Khách hàng:
-								</span>
-								<span className="col-span-2 font-medium">{order.fullname}</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Điện thoại:
-								</span>
-								<span className="col-span-2">{order.phone}</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Địa chỉ:
-								</span>
-								<span className="col-span-2">{order.address?.replace(/\|\|/g, ", ")}</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
-								<span className="font-medium text-muted-foreground">
-									Trạng thái:
-								</span>
-								<span className="col-span-2">
-									<Badge variant="outline" className={statusInfo.className}>
-										{statusInfo.label}
-									</Badge>
-								</span>
-							</div>
-						</div>
 
-						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Tạm tính:
-								</span>
-								<span className="col-span-2 font-medium">
-									{new Intl.NumberFormat("vi-VN", {
-										style: "currency",
-										currency: "VND",
-									}).format(
-										totalNum - 
-										parseFloat(order.shippingFee || "0") + 
-										parseFloat(order.discountAmount?.toString() || "0")
-									)}
-								</span>
-							</div>
-							{(order.discountAmount || 0) > 0 && (
-								<div className="grid grid-cols-3 gap-2 border-b pb-2">
+					<div className="mt-5 space-y-5 text-sm">
+						{/* Info Grid */}
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs space-y-3">
+								<h3 className="font-semibold text-sm border-b pb-2">
+									Thông tin người nhận
+								</h3>
+								<div className="grid grid-cols-3 gap-2 text-xs">
 									<span className="font-medium text-muted-foreground">
-										Khuyến mãi:
+										Khách hàng:
 									</span>
-									<span className="col-span-2 font-medium text-green-600 dark:text-green-400">
-										{order.discountCode ? `[${order.discountCode}] ` : ""}
-										-{new Intl.NumberFormat("vi-VN", {
-											style: "currency",
-											currency: "VND",
-										}).format(order.discountAmount)}
+									<span className="col-span-2 font-medium">{order.fullname || "-"}</span>
+								</div>
+								<div className="grid grid-cols-3 gap-2 text-xs">
+									<span className="font-medium text-muted-foreground">
+										Điện thoại:
+									</span>
+									<span className="col-span-2 font-mono">{order.phone || "-"}</span>
+								</div>
+								<div className="grid grid-cols-3 gap-2 text-xs">
+									<span className="font-medium text-muted-foreground">
+										Địa chỉ:
+									</span>
+									<span className="col-span-2">{order.address ? order.address.replace(/\|\|/g, ", ") : "-"}</span>
+								</div>
+								<div className="grid grid-cols-3 gap-2 text-xs items-center">
+									<span className="font-medium text-muted-foreground">
+										Trạng thái:
+									</span>
+									<span className="col-span-2">
+										<Badge variant="outline" className={statusInfo.className}>
+											{statusInfo.label}
+										</Badge>
 									</span>
 								</div>
-							)}
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Phí ship:
-								</span>
-								<span className="col-span-2 font-medium">
-									{new Intl.NumberFormat("vi-VN", {
-										style: "currency",
-										currency: "VND",
-									}).format(parseFloat(order.shippingFee || "0"))}
-								</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Tổng tiền:
-								</span>
-								<span className="col-span-2 font-medium text-primary">
-									{formattedTotal}
-								</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Thanh toán:
-								</span>
-								<span className="col-span-2 uppercase font-medium">
-									{order.paymentMethod || "COD"}
-								</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Ngày đặt:
-								</span>
-								<span className="col-span-2">{order.createdDate}</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Hết hạn:
-								</span>
-								<span className="col-span-2">{order.expiredDate}</span>
+
+							<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs space-y-3">
+								<h3 className="font-semibold text-sm border-b pb-2">
+									Thông tin thanh toán
+								</h3>
+								<div className="grid grid-cols-3 gap-2 text-xs">
+									<span className="font-medium text-muted-foreground">
+										Phương thức:
+									</span>
+									<span className="col-span-2 uppercase font-medium">
+										<Badge variant="outline">
+											{order.paymentMethod || "COD"}
+										</Badge>
+									</span>
+								</div>
+								<div className="grid grid-cols-3 gap-2 text-xs">
+									<span className="font-medium text-muted-foreground">
+										Tạm tính:
+									</span>
+									<span className="col-span-2 font-mono">
+										{new Intl.NumberFormat("vi-VN", {
+											style: "currency",
+											currency: "VND",
+										}).format(
+											totalNum - 
+											parseFloat(order.shippingFee || "0") + 
+											parseFloat(order.discountAmount?.toString() || "0")
+										)}
+									</span>
+								</div>
+								{(order.discountAmount || 0) > 0 && (
+									<div className="grid grid-cols-3 gap-2 text-xs">
+										<span className="font-medium text-muted-foreground">
+											Khuyến mãi:
+										</span>
+										<span className="col-span-2 font-medium text-emerald-600 dark:text-emerald-400 font-mono">
+											{order.discountCode ? `[${order.discountCode}] ` : ""}
+											-{new Intl.NumberFormat("vi-VN", {
+												style: "currency",
+												currency: "VND",
+											}).format(order.discountAmount)}
+										</span>
+									</div>
+								)}
+								<div className="grid grid-cols-3 gap-2 text-xs">
+									<span className="font-medium text-muted-foreground">
+										Phí vận chuyển:
+									</span>
+									<span className="col-span-2 font-mono">
+										{new Intl.NumberFormat("vi-VN", {
+											style: "currency",
+											currency: "VND",
+										}).format(parseFloat(order.shippingFee || "0"))}
+									</span>
+								</div>
+								<div className="grid grid-cols-3 gap-2 pt-2 border-t mt-1 text-xs">
+									<span className="font-medium text-muted-foreground">
+										Tổng thanh toán:
+									</span>
+									<span className="col-span-2 font-bold text-primary text-base font-mono">
+										{formattedTotal}
+									</span>
+								</div>
 							</div>
 						</div>
 
 						{/* Order Items */}
-						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm">
-							<h3 className="font-semibold text-lg border-b pb-4 mb-4">
-								Sản phẩm đã đặt
+						<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs">
+							<h3 className="font-semibold text-sm border-b pb-3 mb-3 flex items-center justify-between">
+								<span>Danh sách sản phẩm hoa</span>
+								<Badge variant="secondary" className="font-mono text-xs">
+									{(order.orderDetailResponses || []).length} món
+								</Badge>
 							</h3>
 							{order.orderDetailResponses &&
 							order.orderDetailResponses.length > 0 ? (
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>Sản phẩm</TableHead>
-											<TableHead className="text-right">Đơn giá</TableHead>
-											<TableHead className="text-center">Số lượng</TableHead>
-											<TableHead className="text-right">Thành tiền</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{order.orderDetailResponses.map((item, index) => {
-											const name = item.name || "Sản phẩm";
-											const price = parseFloat(item.price || "0");
-											const qty = parseInt(item.quantity || "1", 10);
-											const total = parseFloat(
-												item.subtotal || (price * qty).toString(),
-											);
+								<div className="overflow-x-auto">
+									<Table>
+										<TableHeader>
+											<TableRow>
+												<TableHead className="text-xs">Sản phẩm</TableHead>
+												<TableHead className="text-right text-xs">Đơn giá</TableHead>
+												<TableHead className="text-center text-xs">Số lượng</TableHead>
+												<TableHead className="text-right text-xs">Thành tiền</TableHead>
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{order.orderDetailResponses.map((item, index) => {
+												const name = item.name || "Sản phẩm";
+												const price = parseFloat(item.price || "0");
+												const qty = parseInt(item.quantity || "1", 10);
+												const total = parseFloat(
+													item.subtotal || (price * qty).toString(),
+												);
 
-											const formatCurrency = (val: number) =>
-												new Intl.NumberFormat("vi-VN", {
-													style: "currency",
-													currency: "VND",
-												}).format(val);
+												const formatCurrency = (val: number) =>
+													new Intl.NumberFormat("vi-VN", {
+														style: "currency",
+														currency: "VND",
+													}).format(val);
 
-											return (
-												<TableRow key={`order-item-${index}`}>
-													<TableCell className="font-medium">{name}</TableCell>
-													<TableCell className="text-right text-muted-foreground">
-														{formatCurrency(price)}
-													</TableCell>
-													<TableCell className="text-center font-medium">
-														{qty}
-													</TableCell>
-													<TableCell className="text-right text-primary font-medium">
-														{formatCurrency(total)}
-													</TableCell>
-												</TableRow>
-											);
-										})}
-									</TableBody>
-								</Table>
+												return (
+													<TableRow key={`order-item-${index}`}>
+														<TableCell className="font-medium text-xs">
+															💐 {name}
+														</TableCell>
+														<TableCell className="text-right text-muted-foreground text-xs font-mono">
+															{formatCurrency(price)}
+														</TableCell>
+														<TableCell className="text-center font-bold text-xs">
+															{qty}
+														</TableCell>
+														<TableCell className="text-right text-primary font-bold text-xs font-mono">
+															{formatCurrency(total)}
+														</TableCell>
+													</TableRow>
+												);
+											})}
+										</TableBody>
+									</Table>
+								</div>
 							) : (
-								<div className="text-center py-8 text-muted-foreground text-sm">
+								<div className="text-center py-6 text-muted-foreground text-xs">
 									Không có thông tin chi tiết sản phẩm.
 								</div>
 							)}
@@ -467,9 +483,12 @@ export function columns({
 			accessorKey: "code",
 			header: "Mã Đơn",
 			cell: ({ row }) => (
-				<span className="font-mono text-sm font-semibold text-foreground">
+				<Badge
+					variant="outline"
+					className="font-mono text-xs font-bold bg-primary/10 text-primary border-primary/25 px-2.5 py-1"
+				>
 					{row.getValue("code")}
-				</span>
+				</Badge>
 			),
 		},
 		{
@@ -537,8 +556,8 @@ export function columns({
 			accessorKey: "createdDate",
 			header: "Ngày Đặt",
 			cell: ({ row }) => (
-				<span className="text-sm text-muted-foreground">
-					{row.getValue("createdDate")}
+				<span className="text-sm text-muted-foreground font-mono">
+					{formatDateTime(row.getValue("createdDate"))}
 				</span>
 			),
 		},

@@ -5,6 +5,7 @@ import {
 	Bell,
 	ExternalLink,
 	Flower2,
+	History,
 	Layers,
 	LayoutDashboard,
 	LogOut,
@@ -33,6 +34,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 import useAccountStore from "@/stores/accountStore";
 import useNotificationStore from "@/stores/notificationStore";
+import { formatDateTime } from "@/lib/utils";
 
 const NAV_GROUPS = [
 	{
@@ -61,6 +63,12 @@ const NAV_GROUPS = [
 		items: [
 			{ href: "/users", label: "Người Dùng", icon: Users },
 			{ href: "/comments", label: "Đánh Giá & Bình Luận", icon: MessageSquare },
+		],
+	},
+	{
+		title: "HỆ THỐNG & BẢO MẬT",
+		items: [
+			{ href: "/logs", label: "Nhật Ký Hoạt Động", icon: History, badge: "LIVE" },
 		],
 	},
 ];
@@ -389,7 +397,7 @@ export default function AdminLayout({
 														{notif.message}
 													</div>
 													<div className="text-[10px] text-muted-foreground/70 mt-1 font-mono">
-														{new Date(notif.timestamp).toLocaleString("vi-VN")}
+														{formatDateTime(notif.timestamp, true)}
 													</div>
 												</div>
 											</DropdownMenuItem>
