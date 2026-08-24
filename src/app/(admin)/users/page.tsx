@@ -171,7 +171,7 @@ export default function UsersPage() {
 					</div>
 
 					<Select
-						value={role}
+						value={role ?? RoleCode.ALL}
 						onValueChange={handleRoleChange}
 						disabled={loading}
 					>

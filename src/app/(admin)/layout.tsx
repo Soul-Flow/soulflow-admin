@@ -11,6 +11,7 @@ import {
 	LogOut,
 	Menu,
 	MessageSquare,
+	HeartHandshake,
 	Shield,
 	ShoppingCart,
 	Sparkles,
@@ -35,6 +36,13 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import useAccountStore from "@/stores/accountStore";
 import useNotificationStore from "@/stores/notificationStore";
 import { formatDateTime } from "@/lib/utils";
+import { jwtDecode } from "jwt-decode";
+
+interface JwtPayload {
+	sub: string;
+	roleCode: string;
+	exp: number;
+}
 
 const NAV_GROUPS = [
 	{
@@ -61,6 +69,12 @@ const NAV_GROUPS = [
 	{
 		title: "KHÁCH HÀNG & TƯƠNG TÁC",
 		items: [
+			{
+				href: "/custom-orders",
+				label: "Đặt Hoa Theo Yêu Cầu",
+				icon: HeartHandshake,
+				badge: "HOT",
+			},
 			{ href: "/users", label: "Người Dùng", icon: Users },
 			{ href: "/comments", label: "Đánh Giá & Bình Luận", icon: MessageSquare },
 		],
@@ -85,15 +99,41 @@ export default function AdminLayout({
 	const { connect, disconnect, notifications, unreadCount, markAllAsRead } =
 		useNotificationStore();
 
-	// Restore token from localStorage on every page load (client-side only)
+	const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+
+	// Auth Guard: Chỉ cho phép tài khoản có quyền ADMIN và token còn hạn truy cập
 	useEffect(() => {
-		rehydrate();
-	}, [rehydrate]);
+		try {
+			const token = localStorage.getItem("admin_token");
+			if (!token) {
+				setIsAuthorized(false);
+				router.replace("/login");
+				return;
+			}
+			const decoded = jwtDecode<JwtPayload>(token);
+			if (decoded.exp * 1000 <= Date.now() || decoded.roleCode !== "ADMIN") {
+				localStorage.removeItem("admin_token");
+				document.cookie = "admin_token=; Max-Age=0; path=/";
+				setIsAuthorized(false);
+				router.replace("/login");
+				return;
+			}
+			rehydrate();
+			setIsAuthorized(true);
+		} catch {
+			localStorage.removeItem("admin_token");
+			document.cookie = "admin_token=; Max-Age=0; path=/";
+			setIsAuthorized(false);
+			router.replace("/login");
+		}
+	}, [rehydrate, router]);
 
 	useEffect(() => {
-		connect();
-		return () => disconnect();
-	}, [connect, disconnect]);
+		if (isAuthorized) {
+			connect();
+			return () => disconnect();
+		}
+	}, [isAuthorized, connect, disconnect]);
 
 	const isActive = (href: string) =>
 		pathname === href || pathname.startsWith(`${href}/`);
@@ -104,6 +144,19 @@ export default function AdminLayout({
 				? "bg-primary text-primary-foreground font-semibold shadow-xs"
 				: "text-muted-foreground hover:text-foreground hover:bg-muted/70"
 		}`;
+
+	if (isAuthorized !== true) {
+		return (
+			<div className="flex min-h-screen w-full items-center justify-center bg-background">
+				<div className="flex flex-col items-center gap-3">
+					<div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+					<p className="text-sm font-medium text-muted-foreground">
+						Đang kiểm tra quyền quản trị...
+					</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="grid min-h-screen w-full md:grid-cols-[250px_1fr] lg:grid-cols-[280px_1fr] bg-background">

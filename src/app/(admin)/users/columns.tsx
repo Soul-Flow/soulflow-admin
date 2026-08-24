@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Eye, Lock, MoreHorizontal, Unlock } from "lucide-react";
+import { Eye, Lock, MoreHorizontal, Unlock, User } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {

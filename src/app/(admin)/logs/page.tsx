@@ -6,6 +6,7 @@ import {
 	Clock,
 	ExternalLink,
 	Filter,
+	HeartHandshake,
 	History,
 	KeyRound,
 	Layers,
@@ -33,8 +34,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { type SystemActivityLog, logService } from "@/services/logService";
 
 const CATEGORY_MAP: Record<
@@ -43,6 +43,7 @@ const CATEGORY_MAP: Record<
 > = {
 	AUTH: { label: "Xác thực & Login", icon: KeyRound, color: "bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400" },
 	ORDER: { label: "Đơn hàng", icon: ShoppingCart, color: "bg-blue-500/15 text-blue-700 border-blue-500/25 dark:text-blue-400" },
+	CUSTOM_ORDER: { label: "Đặt hoa yêu cầu", icon: HeartHandshake, color: "bg-teal-500/15 text-teal-700 border-teal-500/25 dark:text-teal-400" },
 	PRODUCT: { label: "Sản phẩm & Kho", icon: Package, color: "bg-amber-500/15 text-amber-700 border-amber-500/25 dark:text-amber-400" },
 	CATEGORY: { label: "Danh mục", icon: Layers, color: "bg-indigo-500/15 text-indigo-700 border-indigo-500/25 dark:text-indigo-400" },
 	DISCOUNT: { label: "Khuyến mãi", icon: Activity, color: "bg-orange-500/15 text-orange-700 border-orange-500/25 dark:text-orange-400" },
@@ -232,36 +233,65 @@ export default function AuditLogsPage() {
 			<Card className="border-border shadow-2xs">
 				<CardHeader className="pb-3">
 					<div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-						{/* Tabs Filter */}
-						<Tabs
-							value={selectedCategory}
-							onValueChange={setSelectedCategory}
-							className="w-full lg:w-auto"
-						>
-							<TabsList className="grid grid-cols-3 sm:grid-cols-7 h-auto p-1 gap-1">
-								<TabsTrigger value="ALL" className="text-xs py-1.5">
-									Tất cả
-								</TabsTrigger>
-								<TabsTrigger value="AUTH" className="text-xs py-1.5">
-									Đăng nhập
-								</TabsTrigger>
-								<TabsTrigger value="ORDER" className="text-xs py-1.5">
-									Đơn hàng
-								</TabsTrigger>
-								<TabsTrigger value="PRODUCT" className="text-xs py-1.5">
-									Sản phẩm
-								</TabsTrigger>
-								<TabsTrigger value="CATEGORY" className="text-xs py-1.5">
-									Danh mục
-								</TabsTrigger>
-								<TabsTrigger value="DISCOUNT" className="text-xs py-1.5">
-									Voucher
-								</TabsTrigger>
-								<TabsTrigger value="USER" className="text-xs py-1.5">
-									Người dùng
-								</TabsTrigger>
-							</TabsList>
-						</Tabs>
+						{/* Category Pills Filter */}
+						<div className="flex flex-wrap items-center gap-1.5 p-1 bg-muted/60 rounded-lg border border-border/50">
+							<button
+								type="button"
+								onClick={() => setSelectedCategory("ALL")}
+								className={cn(
+									"px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer inline-flex items-center gap-1.5",
+									selectedCategory === "ALL"
+										? "bg-background text-foreground shadow-xs border border-border/60"
+										: "text-muted-foreground hover:text-foreground hover:bg-background/40",
+								)}
+							>
+								<Activity className="h-3.5 w-3.5" />
+								Tất cả
+								<span
+									className={cn(
+										"px-1.5 py-0.2 rounded-full text-[10px]",
+										selectedCategory === "ALL"
+											? "bg-primary/10 text-primary font-bold"
+											: "bg-muted text-muted-foreground",
+									)}
+								>
+									{logs.length}
+								</span>
+							</button>
+							{Object.entries(CATEGORY_MAP).map(([key, config]) => {
+								const Icon = config.icon;
+								const count = logs.filter((l) => l.category === key).length;
+								const isActive = selectedCategory === key;
+								return (
+									<button
+										key={key}
+										type="button"
+										onClick={() => setSelectedCategory(key)}
+										className={cn(
+											"px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer inline-flex items-center gap-1.5",
+											isActive
+												? "bg-background text-foreground shadow-xs border border-border/60"
+												: "text-muted-foreground hover:text-foreground hover:bg-background/40",
+										)}
+									>
+										<Icon className="h-3.5 w-3.5" />
+										{config.label}
+										{count > 0 && (
+											<span
+												className={cn(
+													"px-1.5 py-0.2 rounded-full text-[10px]",
+													isActive
+														? "bg-primary/10 text-primary font-bold"
+														: "bg-muted text-muted-foreground",
+												)}
+											>
+												{count}
+											</span>
+										)}
+									</button>
+								);
+							})}
+						</div>
 
 						{/* Search Input */}
 						<div className="relative w-full lg:w-72">

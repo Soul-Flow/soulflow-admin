@@ -50,8 +50,14 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function CreateCustomOrderDialog({
 	onCreated,
+	trigger,
+	initialUsername,
+	initialPrice,
 }: {
 	onCreated?: () => void;
+	trigger?: React.ReactNode;
+	initialUsername?: string;
+	initialPrice?: number;
 }) {
 	const [open, setOpen] = useState(false);
 	const [isSearching, setIsSearching] = useState(false);
@@ -158,14 +164,16 @@ export function CreateCustomOrderDialog({
 		}
 	}, [watchDistrictId, watchWardCode, setValue]);
 
-	const handleSearchUser = async () => {
-		if (!watchUsername) {
+	const handleSearchUser = async (usernameToSearch?: string) => {
+		const targetUsername = usernameToSearch || watchUsername;
+		if (!targetUsername) {
 			toast.error("Vui lòng nhập Username để tìm kiếm");
 			return;
 		}
 		setIsSearching(true);
 		try {
-			const account = await accountService.findByUsername(watchUsername);
+			const account = await accountService.findByUsername(targetUsername);
+			setValue("username", targetUsername);
 			setValue("accountPk", Number(account.pk));
 			setValue("fullname", account.fullname || "");
 			setValue("phone", account.phone || "");
@@ -278,6 +286,16 @@ export function CreateCustomOrderDialog({
 		}
 	};
 
+	useEffect(() => {
+		if (open && initialUsername) {
+			setValue("username", initialUsername);
+			void handleSearchUser(initialUsername);
+		}
+		if (open && initialPrice) {
+			setValue("price", initialPrice);
+		}
+	}, [open, initialUsername, initialPrice]);
+
 	const onSubmit = async (data: FormValues) => {
 		try {
 			const provinceName =
@@ -318,10 +336,14 @@ export function CreateCustomOrderDialog({
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
-				<Button className="flex items-center gap-2">
-					<PlusCircle className="h-4 w-4" />
-					Tạo Đơn Hàng Custom
-				</Button>
+				{trigger ? (
+					trigger
+				) : (
+					<Button className="flex items-center gap-2">
+						<PlusCircle className="h-4 w-4" />
+						Tạo Đơn Hàng Custom
+					</Button>
+				)}
 			</DialogTrigger>
 			<DialogContent
 				className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto"
