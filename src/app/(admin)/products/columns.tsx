@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Edit, Eye, ImagePlus, MoreHorizontal, Trash, X } from "lucide-react";
+import { Edit, Eye, Flower2, ImagePlus, MoreHorizontal, Trash, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import type { ProductResponse } from "@/interfaces/responses/product-response.interface";
+import { formatDateTime } from "@/lib/utils";
 import useProductStore from "@/stores/productStore";
 
 const editSchema = z.object({
@@ -135,7 +136,7 @@ function StatusCell({
 			disabled={isUpdating}
 		>
 			<SelectTrigger
-				className={`h-7 w-[130px] text-xs font-medium ${isAvailable ? "bg-green-600/15 text-green-700 border-green-600/25 dark:text-green-400" : "bg-slate-500/15 text-slate-700 border-slate-500/25 dark:text-slate-400"}`}
+				className={`h-8.5 w-[135px] text-xs font-medium ${isAvailable ? "bg-green-600/15 text-green-700 border-green-600/25 dark:text-green-400" : "bg-slate-500/15 text-slate-700 border-slate-500/25 dark:text-slate-400"}`}
 			>
 				<SelectValue />
 			</SelectTrigger>
@@ -363,115 +364,147 @@ function ActionCell({
 			</DropdownMenu>
 
 			<Sheet open={showViewSheet} onOpenChange={handleOpenChange}>
-				<SheetContent className="overflow-y-auto">
-					<SheetHeader>
-						<SheetTitle>Chi Tiết Sản Phẩm</SheetTitle>
-						<SheetDescription>Mã: {product.code}</SheetDescription>
+				<SheetContent className="overflow-y-auto w-full sm:max-w-xl md:max-w-2xl p-6">
+					<SheetHeader className="pb-3 border-b">
+						<SheetTitle className="text-xl font-bold flex items-center gap-2">
+							<Flower2 className="h-5 w-5 text-primary" />
+							<span>Chi Tiết Sản Phẩm</span>
+							<Badge variant="outline" className="font-mono text-xs ml-auto">
+								#{product.code}
+							</Badge>
+						</SheetTitle>
+						<SheetDescription>
+							PK: {product.pk} • Ngày tạo: {formatDateTime(product.createdDate)}
+						</SheetDescription>
 					</SheetHeader>
-					<div className="mt-6 px-4 pb-6 space-y-4 text-sm">
-						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">PK:</span>
-								<span className="col-span-2 font-mono text-xs">
-									{product.pk}
-								</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">Tên:</span>
-								<span className="col-span-2 font-medium">{product.nameVn}</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Mô tả (VN):
-								</span>
-								<span className="col-span-2 text-muted-foreground">
-									{product.descriptionVn}
-								</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Mô tả (EN):
-								</span>
-								<span className="col-span-2 text-muted-foreground">
-									{product.descriptionEng}
-								</span>
-							</div>
-						</div>
 
-						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">Giá:</span>
-								<span className="col-span-2 font-medium text-primary">
-									{formattedAmount}
-								</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Tồn kho:
-								</span>
-								<span className="col-span-2">{product.quantity}</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Đã bán:
-								</span>
-								<span className="col-span-2">{product.sales}</span>
-							</div>
-						</div>
-
-						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Ngày tạo:
-								</span>
-								<span className="col-span-2">{product.createdDate}</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
-								<span className="font-medium text-muted-foreground">
-									Trạng thái:
-								</span>
-								<span className="col-span-2">
-									{isAvailable ? (
-										<Badge className="bg-green-600 hover:bg-green-700">
-											Kinh doanh
-										</Badge>
-									) : (
-										<Badge variant="secondary">Tạm ngưng</Badge>
-									)}
-								</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Thiết kế tùy chỉnh:
-								</span>
-								<span className="col-span-2">
-									{isCustomised ? "Có" : "Không"}
-								</span>
-							</div>
-							{product.productImageResponses &&
-								product.productImageResponses.length > 0 && (
-									<div className="grid grid-cols-1 gap-2 pt-2">
-										<span className="font-medium text-muted-foreground">
-											Hình ảnh:
+					<div className="mt-5 space-y-4 text-sm">
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs space-y-3">
+								<h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider border-b pb-1.5">
+									Tên sản phẩm
+								</h4>
+								<div className="space-y-2 text-xs">
+									<div>
+										<span className="text-muted-foreground font-medium block">
+											Tên tiếng Việt:
 										</span>
-										<div className="grid grid-cols-4 gap-2 pt-1">
-											{product.productImageResponses.map((img, index) => (
-												<div
-													key={img.pk || index}
-													className="group relative aspect-square overflow-hidden rounded-md border"
-												>
-													{/* eslint-disable-next-line @next/next/no-img-element */}
-													<img
-														src={img.url}
-														alt={`Ảnh sản phẩm ${index + 1}`}
-														className="h-full w-full object-cover"
-													/>
-												</div>
-											))}
-										</div>
+										<span className="font-semibold text-sm text-foreground">
+											{product.nameVn}
+										</span>
 									</div>
-								)}
+									<div>
+										<span className="text-muted-foreground font-medium block">
+											Tên tiếng Anh:
+										</span>
+										<span className="font-medium text-foreground">
+											{product.nameEng}
+										</span>
+									</div>
+								</div>
+							</div>
+
+							<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs space-y-3">
+								<h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider border-b pb-1.5">
+									Giá & Tồn kho
+								</h4>
+								<div className="grid grid-cols-2 gap-2 text-xs">
+									<div>
+										<span className="text-muted-foreground font-medium block">
+											Đơn giá:
+										</span>
+										<span className="font-bold text-base text-primary font-mono">
+											{formattedAmount}
+										</span>
+									</div>
+									<div>
+										<span className="text-muted-foreground font-medium block">
+											Tồn kho:
+										</span>
+										<span className="font-bold text-base text-foreground font-mono">
+											{product.quantity}
+										</span>
+									</div>
+									<div>
+										<span className="text-muted-foreground font-medium block">
+											Đã bán:
+										</span>
+										<span className="font-medium text-muted-foreground font-mono">
+											{product.sales}
+										</span>
+									</div>
+									<div>
+										<span className="text-muted-foreground font-medium block">
+											Trạng thái:
+										</span>
+										<span className="mt-1 block">
+											{isAvailable ? (
+												<Badge className="bg-emerald-600 hover:bg-emerald-700 text-xs">
+													Kinh doanh
+												</Badge>
+											) : (
+												<Badge variant="secondary" className="text-xs">
+													Tạm ngưng
+												</Badge>
+											)}
+										</span>
+									</div>
+								</div>
+							</div>
 						</div>
+
+						{/* Descriptions */}
+						<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs space-y-3 text-xs">
+							<h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider border-b pb-1.5">
+								Mô tả sản phẩm
+							</h4>
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div>
+									<span className="text-muted-foreground font-medium block mb-1">
+										Mô tả (VN):
+									</span>
+									<p className="text-muted-foreground bg-muted/30 p-2.5 rounded-lg whitespace-pre-wrap">
+										{product.descriptionVn || "Không có mô tả tiếng Việt"}
+									</p>
+								</div>
+								<div>
+									<span className="text-muted-foreground font-medium block mb-1">
+										Mô tả (EN):
+									</span>
+									<p className="text-muted-foreground bg-muted/30 p-2.5 rounded-lg whitespace-pre-wrap">
+										{product.descriptionEng || "No English description"}
+									</p>
+								</div>
+							</div>
+						</div>
+
+						{/* Images */}
+						{product.productImageResponses &&
+							product.productImageResponses.length > 0 && (
+								<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs space-y-3">
+									<h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider border-b pb-1.5 flex items-center justify-between">
+										<span>Hình ảnh sản phẩm</span>
+										<Badge variant="secondary" className="font-mono text-xs">
+											{product.productImageResponses.length} ảnh
+										</Badge>
+									</h4>
+									<div className="grid grid-cols-4 sm:grid-cols-6 gap-2 pt-1">
+										{product.productImageResponses.map((img, index) => (
+											<div
+												key={img.pk || index}
+												className="group relative aspect-square overflow-hidden rounded-md border"
+											>
+												{/* eslint-disable-next-line @next/next/no-img-element */}
+												<img
+													src={img.url}
+													alt={`Ảnh sản phẩm ${index + 1}`}
+													className="h-full w-full object-cover"
+												/>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
 					</div>
 				</SheetContent>
 			</Sheet>
@@ -483,17 +516,17 @@ function ActionCell({
 					if (!o) reset();
 				}}
 			>
-				<DialogContent className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
+				<DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6">
 					<DialogHeader>
 						<DialogTitle>Cập Nhật Sản Phẩm</DialogTitle>
 						<DialogDescription>
 							Chỉnh sửa thông tin sản phẩm {product.nameVn}.
 						</DialogDescription>
 					</DialogHeader>
-					<form onSubmit={handleSubmit(handleUpdate)}>
-						<div className="grid gap-4 py-4">
+					<form onSubmit={handleSubmit(handleUpdate)} className="space-y-4 py-2">
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="grid gap-2">
-								<Label>Tên Sản Phẩm (VN)</Label>
+								<Label>Tên Sản Phẩm (VN) *</Label>
 								<Input {...register("nameVn")} aria-invalid={!!errors.nameVn} />
 								{errors.nameVn && (
 									<p className="text-xs text-destructive">
@@ -502,7 +535,7 @@ function ActionCell({
 								)}
 							</div>
 							<div className="grid gap-2">
-								<Label>Tên Sản Phẩm (EN)</Label>
+								<Label>Tên Sản Phẩm (EN) *</Label>
 								<Input
 									{...register("nameEng")}
 									aria-invalid={!!errors.nameEng}
@@ -513,24 +546,11 @@ function ActionCell({
 									</p>
 								)}
 							</div>
+						</div>
+
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="grid gap-2">
-								<Label>Mô tả (VN)</Label>
-								<Textarea
-									className="min-h-[80px]"
-									placeholder="Mô tả bằng tiếng Việt..."
-									{...register("descriptionVn")}
-								/>
-							</div>
-							<div className="grid gap-2">
-								<Label>Mô tả (EN)</Label>
-								<Textarea
-									className="min-h-[80px]"
-									placeholder="Mô tả bằng tiếng Anh..."
-									{...register("descriptionEng")}
-								/>
-							</div>
-							<div className="grid gap-2">
-								<Label>Giá (VNĐ)</Label>
+								<Label>Giá (VNĐ) *</Label>
 								<Input
 									type="number"
 									{...register("price", { valueAsNumber: true })}
@@ -543,17 +563,20 @@ function ActionCell({
 								)}
 							</div>
 							<div className="grid gap-2">
-								<Label>Tồn kho</Label>
+								<Label>Tồn kho *</Label>
 								<Input
 									type="number"
 									{...register("quantity", { valueAsNumber: true })}
 									aria-invalid={!!errors.quantity}
 								/>
 							</div>
+						</div>
+
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="grid gap-2">
 								<Label>Trạng thái</Label>
 								<select
-									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-2xs"
 									onChange={(e) =>
 										setValue("available", e.target.value === "true")
 									}
@@ -566,7 +589,7 @@ function ActionCell({
 							<div className="grid gap-2">
 								<Label>Thiết kế theo yêu cầu (Customised)</Label>
 								<select
-									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-2xs"
 									onChange={(e) =>
 										setValue("customised", e.target.value === "true")
 									}
@@ -576,83 +599,104 @@ function ActionCell({
 									<option value="true">Cho phép (Có)</option>
 								</select>
 							</div>
+						</div>
+
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="grid gap-2">
-								<Label htmlFor={`p-images-${product.pk}`}>
-									Hình ảnh sản phẩm (Tải lên thêm)
-								</Label>
-								<label
-									htmlFor={`p-images-${product.pk}`}
-									className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground hover:bg-accent/50"
-								>
-									<ImagePlus className="h-4 w-4" />
-									Chọn ảnh mới để tải lên
-								</label>
-								<input
-									id={`p-images-${product.pk}`}
-									type="file"
-									accept="image/*"
-									multiple
-									className="hidden"
-									onChange={handleImageChange}
+								<Label>Mô tả (VN)</Label>
+								<Textarea
+									className="min-h-[75px]"
+									placeholder="Mô tả bằng tiếng Việt..."
+									{...register("descriptionVn")}
 								/>
+							</div>
+							<div className="grid gap-2">
+								<Label>Mô tả (EN)</Label>
+								<Textarea
+									className="min-h-[75px]"
+									placeholder="Mô tả bằng tiếng Anh..."
+									{...register("descriptionEng")}
+								/>
+							</div>
+						</div>
 
-								{product.productImageResponses &&
-									product.productImageResponses.length > 0 && (
-										<div className="pt-2">
-											<span className="text-xs text-muted-foreground block mb-2">
-												Hình ảnh hiện tại:
-											</span>
-											<div className="grid grid-cols-4 gap-2">
-												{product.productImageResponses.map((img, index) => (
-													<div
-														key={`exist-${img.pk || index}`}
-														className="aspect-square overflow-hidden rounded-md border opacity-70"
-													>
-														{/* eslint-disable-next-line @next/next/no-img-element */}
-														<img
-															src={img.url}
-															alt={`Ảnh hiện tại ${index + 1}`}
-															className="h-full w-full object-cover"
-														/>
-													</div>
-												))}
-											</div>
-										</div>
-									)}
+						<div className="grid gap-2">
+							<Label htmlFor={`p-images-${product.pk}`}>
+								Hình ảnh sản phẩm (Tải lên thêm)
+							</Label>
+							<label
+								htmlFor={`p-images-${product.pk}`}
+								className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-input p-3 text-sm text-muted-foreground hover:bg-accent/50"
+							>
+								<ImagePlus className="h-4 w-4" />
+								Chọn ảnh mới để tải lên
+							</label>
+							<input
+								id={`p-images-${product.pk}`}
+								type="file"
+								accept="image/*"
+								multiple
+								className="hidden"
+								onChange={handleImageChange}
+							/>
 
-								{images.length > 0 && (
+							{product.productImageResponses &&
+								product.productImageResponses.length > 0 && (
 									<div className="pt-2">
-										<span className="text-xs text-muted-foreground block mb-2">
-											Ảnh mới sẽ thêm:
+										<span className="text-xs text-muted-foreground block mb-2 font-medium">
+											Hình ảnh hiện tại ({product.productImageResponses.length}):
 										</span>
-										<div className="grid grid-cols-4 gap-2">
-											{images.map((img, index) => (
+										<div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+											{product.productImageResponses.map((img, index) => (
 												<div
-													key={img.previewUrl}
-													className="group relative aspect-square overflow-hidden rounded-md border"
+													key={`exist-${img.pk || index}`}
+													className="aspect-square overflow-hidden rounded-md border opacity-80"
 												>
 													{/* eslint-disable-next-line @next/next/no-img-element */}
 													<img
-														src={img.previewUrl}
-														alt={`Ảnh mới ${index + 1}`}
+														src={img.url}
+														alt={`Ảnh hiện tại ${index + 1}`}
 														className="h-full w-full object-cover"
 													/>
-													<button
-														type="button"
-														onClick={() => handleRemoveImage(index)}
-														className="absolute right-1 top-1 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
-														aria-label="Xóa ảnh"
-													>
-														<X className="h-3 w-3" />
-													</button>
 												</div>
 											))}
 										</div>
 									</div>
 								)}
-							</div>
+
+							{images.length > 0 && (
+								<div className="pt-2">
+									<span className="text-xs text-muted-foreground block mb-2 font-medium">
+										Ảnh mới sẽ thêm ({images.length}):
+									</span>
+									<div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+										{images.map((img, index) => (
+											<div
+												key={img.previewUrl}
+												className="group relative aspect-square overflow-hidden rounded-md border"
+											>
+												{/* eslint-disable-next-line @next/next/no-img-element */}
+												<img
+													src={img.previewUrl}
+													alt={`Ảnh mới ${index + 1}`}
+													className="h-full w-full object-cover"
+												/>
+												<button
+													type="button"
+													onClick={() => handleRemoveImage(index)}
+													className="absolute right-1 top-1 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
+													aria-label="Xóa ảnh"
+												>
+													<X className="h-3 w-3" />
+												</button>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
 						</div>
-						<DialogFooter>
+
+						<DialogFooter className="pt-2">
 							<Button
 								type="button"
 								variant="outline"
@@ -702,42 +746,61 @@ export function columns({
 	return [
 		{
 			accessorKey: "code",
-			header: "Mã",
+			header: "Mã SP",
 			cell: ({ row }) => (
-				<span className="font-mono text-xs">{row.getValue("code")}</span>
+				<Badge
+					variant="outline"
+					className="font-mono text-xs font-semibold bg-muted/60 text-foreground border-border/60 px-2 py-0.5"
+				>
+					{row.getValue("code")}
+				</Badge>
 			),
 		},
 		{
 			accessorKey: "nameVn",
-			header: "Tên Sản Phẩm(VN)",
-			cell: ({ row }) => (
-				<div
-					className="max-w-[200px] truncate font-medium"
-					title={row.getValue("nameVn")}
-				>
-					{row.getValue("nameVn")}
-				</div>
-			),
-		},
-		{
-			accessorKey: "nameEng",
-			header: "Tên Sản Phẩm(EN)",
-			cell: ({ row }) => (
-				<div
-					className="max-w-[200px] truncate font-medium"
-					title={row.getValue("nameEng")}
-				>
-					{row.getValue("nameEng")}
-				</div>
-			),
+			header: "Sản Phẩm",
+			cell: ({ row }) => {
+				const product = row.original;
+				const imageUrl = product.productImageResponses?.[0]?.url;
+				return (
+					<div className="flex items-center gap-3 max-w-[320px]">
+						<div className="h-12 w-12 shrink-0 rounded-xl overflow-hidden border bg-muted/50 flex items-center justify-center shadow-2xs">
+							{imageUrl ? (
+								<img
+									src={imageUrl}
+									alt={product.nameVn}
+									className="h-full w-full object-cover"
+									loading="lazy"
+								/>
+							) : (
+								<Flower2 className="h-5 w-5 text-muted-foreground/60" />
+							)}
+						</div>
+						<div className="flex flex-col min-w-0">
+							<span
+								className="font-semibold text-sm sm:text-base text-foreground truncate"
+								title={product.nameVn}
+							>
+								{product.nameVn}
+							</span>
+							<span
+								className="text-xs text-muted-foreground truncate"
+								title={product.nameEng}
+							>
+								{product.nameEng}
+							</span>
+						</div>
+					</div>
+				);
+			},
 		},
 		{
 			accessorKey: "price",
-			header: "Giá (VNĐ)",
+			header: "Giá Bán",
 			cell: ({ row }) => {
 				const amount = parseFloat(row.getValue("price"));
 				return (
-					<span className="font-medium tabular-nums">
+					<span className="font-bold text-sm sm:text-base tabular-nums text-foreground">
 						{new Intl.NumberFormat("vi-VN", {
 							style: "currency",
 							currency: "VND",
@@ -748,11 +811,25 @@ export function columns({
 		},
 		{
 			accessorKey: "quantity",
-			header: "Tồn kho",
+			header: "Tồn Kho",
 			cell: ({ row }) => {
-				const qty = parseInt(row.getValue("quantity"), 10);
+				const qty = parseInt(row.getValue("quantity"), 10) || 0;
+				if (qty === 0) {
+					return (
+						<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-destructive/15 text-destructive border border-destructive/20">
+							Hết hàng
+						</span>
+					);
+				}
+				if (qty < 10) {
+					return (
+						<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25">
+							{qty} (Sắp hết)
+						</span>
+					);
+				}
 				return (
-					<span className={`font-medium ${qty < 10 ? "text-destructive" : ""}`}>
+					<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
 						{qty}
 					</span>
 				);
@@ -760,9 +837,9 @@ export function columns({
 		},
 		{
 			accessorKey: "sales",
-			header: "Đã bán",
+			header: "Đã Bán",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground">{row.getValue("sales")}</span>
+				<span className="text-sm font-medium text-muted-foreground">{row.getValue("sales") || 0}</span>
 			),
 		},
 		{

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { Eye, Lock, MoreHorizontal, Unlock } from "lucide-react";
+import { Eye, Lock, MoreHorizontal, Unlock, User } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -38,7 +38,9 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import { RoleCode } from "@/enums/role-code.enum";
 import type { AccountResponse } from "@/interfaces/responses/account-response.interface";
+import { formatDateTime } from "@/lib/utils";
 import useAccountStore from "@/stores/accountStore";
 
 function StatusCell({
@@ -198,55 +200,60 @@ function ActionCell({
 			</DropdownMenu>
 
 			<Sheet open={showViewSheet} onOpenChange={setShowViewSheet}>
-				<SheetContent className="overflow-y-auto">
-					<SheetHeader>
-						<SheetTitle>Chi Tiết Người Dùng</SheetTitle>
-						<SheetDescription>PK: {account.pk}</SheetDescription>
+				<SheetContent className="overflow-y-auto w-full sm:max-w-lg md:max-w-xl p-6">
+					<SheetHeader className="pb-3 border-b">
+						<SheetTitle className="text-xl font-bold flex items-center gap-2">
+							<User className="h-5 w-5 text-primary" />
+							<span>Chi Tiết Người Dùng</span>
+						</SheetTitle>
+						<SheetDescription>
+							PK: {account.pk} • Ngày đăng ký: {formatDateTime(account.createdDate)}
+						</SheetDescription>
 					</SheetHeader>
-					<div className="mt-6 px-4 pb-6 space-y-4 text-sm">
-						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+					<div className="mt-5 space-y-4 text-sm">
+						<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs space-y-3">
+							<h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider border-b pb-1.5">
+								Thông tin cá nhân
+							</h4>
+							<div className="grid grid-cols-3 gap-2 text-xs border-b pb-2">
 								<span className="font-medium text-muted-foreground">
 									Họ tên:
 								</span>
-								<span className="col-span-2 font-medium">
+								<span className="col-span-2 font-semibold text-foreground">
 									{account.fullname}
 								</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<div className="grid grid-cols-3 gap-2 text-xs border-b pb-2">
 								<span className="font-medium text-muted-foreground">
 									Username:
 								</span>
-								<span className="col-span-2">{account.username}</span>
+								<span className="col-span-2 font-mono">{account.username}</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<div className="grid grid-cols-3 gap-2 text-xs border-b pb-2">
 								<span className="font-medium text-muted-foreground">
 									Email:
 								</span>
 								<span className="col-span-2">{account.email}</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<div className="grid grid-cols-3 gap-2 text-xs border-b pb-2">
 								<span className="font-medium text-muted-foreground">
 									Điện thoại:
 								</span>
-								<span className="col-span-2">{account.phone}</span>
+								<span className="col-span-2 font-mono">{account.phone || "-"}</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<div className="grid grid-cols-3 gap-2 text-xs">
 								<span className="font-medium text-muted-foreground">
 									Địa chỉ:
 								</span>
-								<span className="col-span-2">{account.address}</span>
+								<span className="col-span-2">{account.address || "-"}</span>
 							</div>
 						</div>
 
-						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Ngày tạo:
-								</span>
-								<span className="col-span-2">{account.createdDate}</span>
-							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
+						<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs space-y-3">
+							<h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider border-b pb-1.5">
+								Phân quyền & Trạng thái
+							</h4>
+							<div className="grid grid-cols-3 gap-2 text-xs border-b pb-2 items-center">
 								<span className="font-medium text-muted-foreground">
 									Vai trò:
 								</span>
@@ -259,7 +266,7 @@ function ActionCell({
 									</Badge>
 								</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2 items-center">
+							<div className="grid grid-cols-3 gap-2 text-xs items-center">
 								<span className="font-medium text-muted-foreground">
 									Trạng thái:
 								</span>
@@ -337,11 +344,14 @@ export function columns({
 	return [
 		{
 			accessorKey: "pk",
-			header: "PK",
+			header: "Mã TK",
 			cell: ({ row }) => (
-				<span className="font-mono text-xs font-medium">
-					{row.getValue("pk")}
-				</span>
+				<Badge
+					variant="outline"
+					className="font-mono text-xs font-semibold bg-muted/50 text-muted-foreground border-border/60 px-2 py-0.5"
+				>
+					#{row.getValue("pk")}
+				</Badge>
 			),
 		},
 		{

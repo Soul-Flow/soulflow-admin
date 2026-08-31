@@ -187,133 +187,145 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 					Thêm Sản Phẩm Mới
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
+			<DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6">
 				<DialogHeader>
 					<DialogTitle>Thêm Sản Phẩm Mới</DialogTitle>
 					<DialogDescription>
 						Điền thông tin chi tiết để thêm sản phẩm mới vào hệ thống.
 					</DialogDescription>
 				</DialogHeader>
-				<form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
-					<div className="grid gap-2">
-						<Label htmlFor="p-nameVn">Tên Sản Phẩm (VN) *</Label>
-						<Input
-							id="p-nameVn"
-							placeholder="VD: Hoa Hồng Đỏ"
-							{...register("nameVn")}
-							aria-invalid={!!errors.nameVn}
-						/>
-						{errors.nameVn && (
-							<p className="text-xs text-destructive">
-								{errors.nameVn.message}
-							</p>
-						)}
+				<form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="p-nameVn">Tên Sản Phẩm (VN) *</Label>
+							<Input
+								id="p-nameVn"
+								placeholder="VD: Hoa Hồng Đỏ"
+								{...register("nameVn")}
+								aria-invalid={!!errors.nameVn}
+							/>
+							{errors.nameVn && (
+								<p className="text-xs text-destructive">
+									{errors.nameVn.message}
+								</p>
+							)}
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="p-nameEng">Tên Sản Phẩm (EN) *</Label>
+							<Input
+								id="p-nameEng"
+								placeholder="VD: Red Rose"
+								{...register("nameEng")}
+								aria-invalid={!!errors.nameEng}
+							/>
+							{errors.nameEng && (
+								<p className="text-xs text-destructive">
+									{errors.nameEng.message}
+								</p>
+							)}
+						</div>
 					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="p-nameEng">Tên Sản Phẩm (EN) *</Label>
-						<Input
-							id="p-nameEng"
-							placeholder="VD: Red Rose"
-							{...register("nameEng")}
-							aria-invalid={!!errors.nameEng}
-						/>
-						{errors.nameEng && (
-							<p className="text-xs text-destructive">
-								{errors.nameEng.message}
-							</p>
-						)}
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="p-price">Giá (VNĐ) *</Label>
+							<Input
+								id="p-price"
+								type="number"
+								placeholder="VD: 350000"
+								{...register("price", { valueAsNumber: true })}
+								aria-invalid={!!errors.price}
+							/>
+							{errors.price && (
+								<p className="text-xs text-destructive">{errors.price.message}</p>
+							)}
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="p-quantity">Số lượng (Tồn kho) *</Label>
+							<Input
+								id="p-quantity"
+								type="number"
+								placeholder="VD: 50"
+								{...register("quantity", { valueAsNumber: true })}
+								aria-invalid={!!errors.quantity}
+							/>
+							{errors.quantity && (
+								<p className="text-xs text-destructive">
+									{errors.quantity.message}
+								</p>
+							)}
+						</div>
 					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="p-descVn">Mô tả (VN)</Label>
-						<Textarea
-							id="p-descVn"
-							className="min-h-[80px]"
-							placeholder="Mô tả sản phẩm..."
-							{...register("descriptionVn")}
-						/>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label>Danh mục *</Label>
+							<Select onValueChange={(v) => setValue("categoryPk", Number(v))}>
+								<SelectTrigger aria-invalid={!!errors.categoryPk}>
+									<SelectValue placeholder="Chọn danh mục" />
+								</SelectTrigger>
+								<SelectContent>
+									{categories.map((c) => (
+										<SelectItem key={c.pk} value={String(c.pk)}>
+											{c.nameVn} - {c.nameEng}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							{errors.categoryPk && (
+								<p className="text-xs text-destructive">
+									{errors.categoryPk.message}
+								</p>
+							)}
+						</div>
+						<div className="grid gap-2">
+							<Label>Thiết kế theo yêu cầu (Customised)</Label>
+							<Select
+								onValueChange={(v) => setValue("customised", v === "true")}
+								defaultValue="false"
+							>
+								<SelectTrigger aria-invalid={!!errors.customised}>
+									<SelectValue placeholder="Chọn loại" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="false">Mặc định (Không)</SelectItem>
+									<SelectItem value="true">Cho phép (Có)</SelectItem>
+								</SelectContent>
+							</Select>
+							{errors.customised && (
+								<p className="text-xs text-destructive">
+									{errors.customised.message}
+								</p>
+							)}
+						</div>
 					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="p-descEng">Mô tả (EN)</Label>
-						<Textarea
-							id="p-descEng"
-							className="min-h-[80px]"
-							placeholder="Mô tả sản phẩm..."
-							{...register("descriptionEng")}
-						/>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="p-descVn">Mô tả (VN)</Label>
+							<Textarea
+								id="p-descVn"
+								className="min-h-[75px]"
+								placeholder="Mô tả sản phẩm tiếng Việt..."
+								{...register("descriptionVn")}
+							/>
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="p-descEng">Mô tả (EN)</Label>
+							<Textarea
+								id="p-descEng"
+								className="min-h-[75px]"
+								placeholder="Mô tả sản phẩm tiếng Anh..."
+								{...register("descriptionEng")}
+							/>
+						</div>
 					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="p-price">Giá (VNĐ) *</Label>
-						<Input
-							id="p-price"
-							type="number"
-							placeholder="VD: 350000"
-							{...register("price", { valueAsNumber: true })}
-							aria-invalid={!!errors.price}
-						/>
-						{errors.price && (
-							<p className="text-xs text-destructive">{errors.price.message}</p>
-						)}
-					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="p-quantity">Số lượng (Tồn kho) *</Label>
-						<Input
-							id="p-quantity"
-							type="number"
-							placeholder="VD: 50"
-							{...register("quantity", { valueAsNumber: true })}
-							aria-invalid={!!errors.quantity}
-						/>
-						{errors.quantity && (
-							<p className="text-xs text-destructive">
-								{errors.quantity.message}
-							</p>
-						)}
-					</div>
-					<div className="grid gap-2">
-						<Label>Danh mục *</Label>
-						<Select onValueChange={(v) => setValue("categoryPk", Number(v))}>
-							<SelectTrigger aria-invalid={!!errors.categoryPk}>
-								<SelectValue placeholder="Chọn danh mục" />
-							</SelectTrigger>
-							<SelectContent>
-								{categories.map((c) => (
-									<SelectItem key={c.pk} value={String(c.pk)}>
-										{c.nameVn} - {c.nameEng}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-						{errors.categoryPk && (
-							<p className="text-xs text-destructive">
-								{errors.categoryPk.message}
-							</p>
-						)}
-					</div>
-					<div className="grid gap-2">
-						<Label>Thiết kế theo yêu cầu (Customised)</Label>
-						<Select
-							onValueChange={(v) => setValue("customised", v === "true")}
-							defaultValue="false"
-						>
-							<SelectTrigger aria-invalid={!!errors.customised}>
-								<SelectValue placeholder="Chọn loại" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="false">Mặc định (Không)</SelectItem>
-								<SelectItem value="true">Cho phép (Có)</SelectItem>
-							</SelectContent>
-						</Select>
-						{errors.customised && (
-							<p className="text-xs text-destructive">
-								{errors.customised.message}
-							</p>
-						)}
-					</div>
+
 					<div className="grid gap-2">
 						<Label htmlFor="p-images">Hình ảnh sản phẩm</Label>
 						<label
 							htmlFor="p-images"
-							className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-input p-4 text-sm text-muted-foreground hover:bg-accent/50"
+							className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-input p-3 text-sm text-muted-foreground hover:bg-accent/50"
 						>
 							<ImagePlus className="h-4 w-4" />
 							Chọn ảnh để tải lên
@@ -352,7 +364,8 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 							</div>
 						)}
 					</div>
-					<DialogFooter>
+
+					<DialogFooter className="pt-2">
 						<Button
 							type="button"
 							variant="outline"

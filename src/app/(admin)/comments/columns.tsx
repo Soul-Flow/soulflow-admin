@@ -42,6 +42,8 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import type { CommentResponse } from "@/interfaces/responses/comment-response.interface";
+import type { ReplyResponse } from "@/interfaces/responses/reply-response.interface";
+import { formatDateTime } from "@/lib/utils";
 import useCommentStore from "@/stores/commentStore";
 import useProductStore from "@/stores/productStore";
 import useReplyStore from "@/stores/replyStore";
@@ -162,8 +164,8 @@ export function CommentExpandedRow({
 											Quản trị viên
 										</Badge>
 									)}
-									<span className="text-xs text-muted-foreground">
-										{reply.createdDate}
+									<span className="text-xs text-muted-foreground font-mono">
+										{formatDateTime(reply.createdDate)}
 									</span>
 								</div>
 								<div className="flex items-center gap-1">
@@ -286,46 +288,47 @@ function ActionCell({
 			</DropdownMenu>
 
 			<Sheet open={showViewSheet} onOpenChange={setShowViewSheet}>
-				<SheetContent className="overflow-y-auto">
-					<SheetHeader>
-						<SheetTitle>Chi Tiết Bình Luận</SheetTitle>
-						<SheetDescription>PK: {comment.pk}</SheetDescription>
+				<SheetContent className="overflow-y-auto w-full sm:max-w-xl p-6">
+					<SheetHeader className="pb-3 border-b">
+						<SheetTitle className="text-xl font-bold flex items-center gap-2">
+							<span>Chi Tiết Bình Luận</span>
+						</SheetTitle>
+						<SheetDescription>
+							Mã bình luận: #{comment.pk} • Ngày đăng: {formatDateTime(comment.createdDate)}
+						</SheetDescription>
 					</SheetHeader>
-					<div className="mt-6 px-4 pb-6 space-y-4 text-sm">
-						<div className="p-5 border-2 rounded-xl bg-card text-card-foreground shadow-sm space-y-3">
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+					<div className="mt-5 space-y-4 text-sm">
+						<div className="p-4 border rounded-xl bg-card text-card-foreground shadow-2xs space-y-3">
+							<h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider border-b pb-1.5">
+								Thông tin người bình luận
+							</h4>
+							<div className="grid grid-cols-3 gap-2 text-xs border-b pb-2">
 								<span className="font-medium text-muted-foreground">
 									Người dùng:
 								</span>
-								<span className="col-span-2 font-medium">
+								<span className="col-span-2 font-semibold text-foreground">
 									{comment.fullname}
 								</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<div className="grid grid-cols-3 gap-2 text-xs border-b pb-2">
 								<span className="font-medium text-muted-foreground">
 									Username:
 								</span>
-								<span className="col-span-2">{comment.username}</span>
+								<span className="col-span-2 font-mono">{comment.username}</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
+							<div className="grid grid-cols-3 gap-2 text-xs border-b pb-2">
 								<span className="font-medium text-muted-foreground">
 									Sản phẩm:
 								</span>
-								<span className="col-span-2">
+								<span className="col-span-2 font-medium text-primary">
 									<ProductNameRenderer pk={comment.productPk} />
 								</span>
 							</div>
-							<div className="grid grid-cols-3 gap-2 border-b pb-2">
-								<span className="font-medium text-muted-foreground">
-									Ngày đăng:
+							<div className="flex flex-col gap-1.5 pt-1">
+								<span className="font-medium text-xs text-muted-foreground">
+									Nội dung bình luận:
 								</span>
-								<span className="col-span-2">{comment.createdDate}</span>
-							</div>
-							<div className="flex flex-col gap-2 pt-2">
-								<span className="font-medium text-muted-foreground">
-									Nội dung:
-								</span>
-								<p className="p-3 bg-muted rounded-md text-foreground whitespace-pre-wrap">
+								<p className="p-3 bg-muted/40 border rounded-lg text-foreground text-xs leading-relaxed whitespace-pre-wrap">
 									{comment.content}
 								</p>
 							</div>
@@ -426,8 +429,8 @@ export function columns({
 			accessorKey: "createdDate",
 			header: "Ngày đăng",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground">
-					{row.getValue("createdDate")}
+				<span className="text-muted-foreground font-mono text-sm">
+					{formatDateTime(row.getValue("createdDate"))}
 				</span>
 			),
 		},

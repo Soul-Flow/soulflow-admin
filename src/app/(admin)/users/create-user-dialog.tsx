@@ -144,122 +144,134 @@ export function CreateUserDialog({ onCreated }: CreateUserDialogProps) {
 					Thêm Người Dùng Mới
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-[425px]">
+			<DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto p-6">
 				<DialogHeader>
-					<DialogTitle>Thêm Người Dùng</DialogTitle>
+					<DialogTitle>Thêm Người Dùng Mới</DialogTitle>
 					<DialogDescription>
-						Tạo tài khoản mới cho nhân viên hoặc người dùng.
+						Tạo tài khoản mới cho nhân viên hoặc người dùng trong hệ thống.
 					</DialogDescription>
 				</DialogHeader>
-				<form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
-					<div className="grid gap-2">
-						<Label htmlFor="u-username">Tài khoản *</Label>
-						<Input
-							id="u-username"
-							placeholder="nguyenvana"
-							{...register("username")}
-							aria-invalid={!!errors.username}
-						/>
-						{errors.username && (
-							<p className="text-xs text-destructive">
-								{errors.username.message}
-							</p>
-						)}
+				<form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="u-username">Tài khoản *</Label>
+							<Input
+								id="u-username"
+								placeholder="nguyenvana"
+								{...register("username")}
+								aria-invalid={!!errors.username}
+							/>
+							{errors.username && (
+								<p className="text-xs text-destructive">
+									{errors.username.message}
+								</p>
+							)}
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="u-fullname">Họ tên *</Label>
+							<Input
+								id="u-fullname"
+								placeholder="Nguyễn Văn A"
+								{...register("fullname")}
+								aria-invalid={!!errors.fullname}
+							/>
+							{errors.fullname && (
+								<p className="text-xs text-destructive">
+									{errors.fullname.message}
+								</p>
+							)}
+						</div>
 					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="u-fullname">Họ tên *</Label>
-						<Input
-							id="u-fullname"
-							placeholder="Nguyễn Văn A"
-							{...register("fullname")}
-							aria-invalid={!!errors.fullname}
-						/>
-						{errors.fullname && (
-							<p className="text-xs text-destructive">
-								{errors.fullname.message}
-							</p>
-						)}
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="u-email">Email *</Label>
+							<Input
+								id="u-email"
+								type="email"
+								placeholder="a@example.com"
+								{...register("email")}
+								aria-invalid={!!errors.email}
+							/>
+							{errors.email && (
+								<p className="text-xs text-destructive">{errors.email.message}</p>
+							)}
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="u-password">Mật khẩu *</Label>
+							<Input
+								id="u-password"
+								type="password"
+								placeholder="••••••"
+								{...register("password")}
+								aria-invalid={!!errors.password}
+							/>
+							{errors.password && (
+								<p className="text-xs text-destructive">
+									{errors.password.message}
+								</p>
+							)}
+						</div>
 					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="u-email">Email *</Label>
-						<Input
-							id="u-email"
-							type="email"
-							placeholder="a@example.com"
-							{...register("email")}
-							aria-invalid={!!errors.email}
-						/>
-						{errors.email && (
-							<p className="text-xs text-destructive">{errors.email.message}</p>
-						)}
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="u-phone">Điện thoại</Label>
+							<Input
+								id="u-phone"
+								placeholder="0901234567"
+								{...register("phone")}
+							/>
+						</div>
+						<div className="grid gap-2">
+							<Label>Vai trò *</Label>
+							<Select
+								defaultValue={RoleCode.USER}
+								onValueChange={(v) => setValue("role", v as RoleCode)}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder="Chọn vai trò" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value={RoleCode.ADMIN}>
+										Quản trị viên (Admin)
+									</SelectItem>
+									<SelectItem value={RoleCode.USER}>Người dùng (User)</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
 					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="u-password">Mật khẩu *</Label>
-						<Input
-							id="u-password"
-							type="password"
-							placeholder="••••••"
-							{...register("password")}
-							aria-invalid={!!errors.password}
-						/>
-						{errors.password && (
-							<p className="text-xs text-destructive">
-								{errors.password.message}
-							</p>
-						)}
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="u-address">Địa chỉ</Label>
+							<Input
+								id="u-address"
+								placeholder="123 Đường ABC, TP.HCM"
+								{...register("address")}
+							/>
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="u-photo">Ảnh đại diện</Label>
+							<Input
+								id="u-photo"
+								type="file"
+								accept="image/*"
+								ref={fileInputRef}
+								onChange={handlePhotoChange}
+							/>
+							{photo && (
+								<p className="text-xs text-muted-foreground">
+									Đã chọn: {photo.name}
+								</p>
+							)}
+							{photoError && (
+								<p className="text-xs text-destructive">{photoError}</p>
+							)}
+						</div>
 					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="u-phone">Điện thoại</Label>
-						<Input
-							id="u-phone"
-							placeholder="0901234567"
-							{...register("phone")}
-						/>
-					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="u-address">Địa chỉ</Label>
-						<Input
-							id="u-address"
-							placeholder="123 Đường ABC, TP.HCM"
-							{...register("address")}
-						/>
-					</div>
-					<div className="grid gap-2">
-						<Label htmlFor="u-photo">Ảnh đại diện</Label>
-						<Input
-							id="u-photo"
-							type="file"
-							accept="image/*"
-							ref={fileInputRef}
-							onChange={handlePhotoChange}
-						/>
-						{photo && (
-							<p className="text-xs text-muted-foreground">
-								Đã chọn: {photo.name}
-							</p>
-						)}
-						{photoError && (
-							<p className="text-xs text-destructive">{photoError}</p>
-						)}
-					</div>
-					<div className="grid gap-2">
-						<Label>Vai trò *</Label>
-						<Select
-							defaultValue={RoleCode.USER}
-							onValueChange={(v) => setValue("role", v as RoleCode)}
-						>
-							<SelectTrigger>
-								<SelectValue placeholder="Chọn vai trò" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value={RoleCode.ADMIN}>
-									Quản trị viên (Admin)
-								</SelectItem>
-								<SelectItem value={RoleCode.USER}>Người dùng (User)</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-					<DialogFooter>
+
+					<DialogFooter className="pt-2">
 						<Button
 							type="button"
 							variant="outline"

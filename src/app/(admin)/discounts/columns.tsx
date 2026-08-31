@@ -17,6 +17,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -44,6 +45,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { DiscountResponse } from "@/interfaces/responses/discount-response.interface";
+import { formatDateOnly, formatDateTime } from "@/lib/utils";
 import useDiscountStore from "@/stores/discountStore";
 
 const editSchema = z.object({
@@ -260,21 +262,22 @@ function ActionCell({
 					if (!o) reset();
 				}}
 			>
-				<DialogContent>
+				<DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto p-6">
 					<DialogHeader>
 						<DialogTitle>Cập Nhật Mã Giảm Giá</DialogTitle>
 						<DialogDescription>
 							Chỉnh sửa thông tin mã {discount.code}.
 						</DialogDescription>
 					</DialogHeader>
-					<form onSubmit={handleSubmit(handleEdit)}>
-						<div className="grid gap-4 py-4">
+					<form onSubmit={handleSubmit(handleEdit)} className="space-y-4 py-2">
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="grid gap-2">
 								<Label>Mã giảm giá</Label>
 								<Input
 									{...register("code")}
 									aria-invalid={!!errors.code}
 									disabled
+									className="bg-muted font-mono"
 								/>
 								{errors.code && (
 									<p className="text-xs text-destructive">
@@ -283,19 +286,7 @@ function ActionCell({
 								)}
 							</div>
 							<div className="grid gap-2">
-								<Label>Mô tả</Label>
-								<Input
-									{...register("descriptionVn")}
-									aria-invalid={!!errors.descriptionVn}
-								/>
-								{errors.descriptionVn && (
-									<p className="text-xs text-destructive">
-										{errors.descriptionVn.message}
-									</p>
-								)}
-							</div>
-							<div className="grid gap-2">
-								<Label>Giảm (%)</Label>
+								<Label>Giảm (%) *</Label>
 								<Input
 									type="number"
 									{...register("percentage", { valueAsNumber: true })}
@@ -307,6 +298,23 @@ function ActionCell({
 									</p>
 								)}
 							</div>
+						</div>
+
+						<div className="grid gap-2">
+							<Label>Mô tả khuyến mãi *</Label>
+							<Input
+								{...register("descriptionVn")}
+								aria-invalid={!!errors.descriptionVn}
+								placeholder="VD: Giảm giá mùa hè..."
+							/>
+							{errors.descriptionVn && (
+								<p className="text-xs text-destructive">
+									{errors.descriptionVn.message}
+								</p>
+							)}
+						</div>
+
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="grid gap-2">
 								<Label>Đơn tối thiểu (VNĐ) *</Label>
 								<Input
@@ -333,21 +341,23 @@ function ActionCell({
 									</p>
 								)}
 							</div>
-							<div className="grid gap-2">
-								<Label>Ngày hết hạn</Label>
-								<Input
-									type="date"
-									{...register("expiredDate")}
-									aria-invalid={!!errors.expiredDate}
-								/>
-								{errors.expiredDate && (
-									<p className="text-xs text-destructive">
-										{errors.expiredDate.message}
-									</p>
-								)}
-							</div>
 						</div>
-						<DialogFooter>
+
+						<div className="grid gap-2">
+							<Label>Ngày hết hạn</Label>
+							<Input
+								type="date"
+								{...register("expiredDate")}
+								aria-invalid={!!errors.expiredDate}
+							/>
+							{errors.expiredDate && (
+								<p className="text-xs text-destructive">
+									{errors.expiredDate.message}
+								</p>
+							)}
+						</div>
+
+						<DialogFooter className="pt-2">
 							<Button
 								type="button"
 								variant="outline"
@@ -395,19 +405,15 @@ export function columns({
 }): ColumnDef<DiscountResponse>[] {
 	return [
 		{
-			accessorKey: "pk",
-			header: "PK",
-			cell: ({ row }) => (
-				<span className="font-mono text-xs font-medium">
-					{row.getValue("pk")}
-				</span>
-			),
-		},
-		{
 			accessorKey: "code",
-			header: "Mã giảm giá",
+			header: "Mã Giảm Giá",
 			cell: ({ row }) => (
-				<span className="font-medium uppercase">{row.getValue("code")}</span>
+				<Badge
+					variant="outline"
+					className="font-mono font-bold tracking-wider text-xs bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 uppercase px-2.5 py-1"
+				>
+					{row.getValue("code")}
+				</Badge>
 			),
 		},
 		{
@@ -464,8 +470,8 @@ export function columns({
 			accessorKey: "createdDate",
 			header: "Ngày tạo",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground text-sm">
-					{row.getValue("createdDate")}
+				<span className="text-muted-foreground text-sm font-mono">
+					{formatDateTime(row.getValue("createdDate"))}
 				</span>
 			),
 		},
@@ -473,8 +479,8 @@ export function columns({
 			accessorKey: "expiredDate",
 			header: "Ngày hết hạn",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground text-sm">
-					{row.getValue("expiredDate")}
+				<span className="text-muted-foreground text-sm font-mono">
+					{formatDateOnly(row.getValue("expiredDate"))}
 				</span>
 			),
 		},

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { OrderStatus } from "@/enums/order-status.enum";
 import type { OrderResponse } from "@/interfaces/responses/order-response.interface";
+import { formatDateTime } from "@/lib/utils";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
 	[OrderStatus.PENDING]: {
@@ -112,7 +113,7 @@ export function OrderList({
 								</div>
 								<div className="flex items-center gap-2">
 									<Clock className="h-3.5 w-3.5" />
-									<span>{order.createdDate}</span>
+									<span>{formatDateTime(order.createdDate)}</span>
 								</div>
 							</div>
 						</Card>

@@ -93,7 +93,7 @@ export function CreateCategoryDialog({ onCreated }: CreateCategoryDialogProps) {
 					Thêm Danh Mục
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="sm:max-w-md">
+			<DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto p-6">
 				<DialogHeader>
 					<DialogTitle>Tạo Danh Mục Mới</DialogTitle>
 					<DialogDescription>
@@ -101,58 +101,62 @@ export function CreateCategoryDialog({ onCreated }: CreateCategoryDialogProps) {
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-2">
-					<div className="grid gap-2">
-						<Label htmlFor="create-nameVn">Tên tiếng Việt *</Label>
-						<Input
-							id="create-nameVn"
-							placeholder="VD: Hoa Tươi"
-							{...register("nameVn")}
-							aria-invalid={!!errors.nameVn}
-						/>
-						{errors.nameVn && (
-							<p className="text-xs text-destructive">
-								{errors.nameVn.message}
-							</p>
-						)}
+				<form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="create-nameVn">Tên tiếng Việt *</Label>
+							<Input
+								id="create-nameVn"
+								placeholder="VD: Hoa Tươi"
+								{...register("nameVn")}
+								aria-invalid={!!errors.nameVn}
+							/>
+							{errors.nameVn && (
+								<p className="text-xs text-destructive">
+									{errors.nameVn.message}
+								</p>
+							)}
+						</div>
+
+						<div className="grid gap-2">
+							<Label htmlFor="create-nameEng">Tên tiếng Anh *</Label>
+							<Input
+								id="create-nameEng"
+								placeholder="VD: Fresh Flowers"
+								{...register("nameEng")}
+								aria-invalid={!!errors.nameEng}
+							/>
+							{errors.nameEng && (
+								<p className="text-xs text-destructive">
+									{errors.nameEng.message}
+								</p>
+							)}
+						</div>
 					</div>
 
-					<div className="grid gap-2">
-						<Label htmlFor="create-nameEng">Tên tiếng Anh *</Label>
-						<Input
-							id="create-nameEng"
-							placeholder="VD: Fresh Flowers"
-							{...register("nameEng")}
-							aria-invalid={!!errors.nameEng}
-						/>
-						{errors.nameEng && (
-							<p className="text-xs text-destructive">
-								{errors.nameEng.message}
-							</p>
-						)}
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="create-descriptionVn">Mô tả tiếng Việt</Label>
+							<Textarea
+								id="create-descriptionVn"
+								placeholder="Nhập mô tả ngắn tiếng Việt..."
+								className="min-h-[80px]"
+								{...register("descriptionVn")}
+							/>
+						</div>
+
+						<div className="grid gap-2">
+							<Label htmlFor="create-descriptionEng">Mô tả tiếng Anh</Label>
+							<Textarea
+								id="create-descriptionEng"
+								placeholder="Enter category description in English..."
+								className="min-h-[80px]"
+								{...register("descriptionEng")}
+							/>
+						</div>
 					</div>
 
-					<div className="grid gap-2">
-						<Label htmlFor="create-descriptionVn">Mô tả tiếng Anh *</Label>
-						<Textarea
-							id="create-descriptionEng"
-							placeholder="Enter category description..."
-							rows={3}
-							{...register("descriptionEng")}
-						/>
-					</div>
-
-					<div className="grid gap-2">
-						<Label htmlFor="create-descriptionVn">Mô tả tiếng Việt *</Label>
-						<Textarea
-							id="create-descriptionVn"
-							placeholder="Nhập mô tả ngắn về danh mục..."
-							rows={3}
-							{...register("descriptionVn")}
-						/>
-					</div>
-
-					<DialogFooter>
+					<DialogFooter className="pt-2">
 						<Button
 							type="button"
 							variant="outline"

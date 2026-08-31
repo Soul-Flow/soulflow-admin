@@ -17,6 +17,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { CategoryResponse } from "@/interfaces/responses/category-response.interface";
 import useCategoryStore from "@/stores/categoryStore";
 
@@ -187,18 +189,17 @@ function ActionCell({
 					if (!open) reset();
 				}}
 			>
-				<DialogContent>
+				<DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto p-6">
 					<DialogHeader>
 						<DialogTitle>Cập Nhật Danh Mục</DialogTitle>
 						<DialogDescription>
-							Chỉnh sửa thông tin danh mục ${category.nameVn} - $
-							{category.nameEng}.
+							Chỉnh sửa thông tin danh mục {category.nameVn} - {category.nameEng}.
 						</DialogDescription>
 					</DialogHeader>
-					<form onSubmit={handleSubmit(handleEdit)}>
-						<div className="grid gap-4 py-4">
+					<form onSubmit={handleSubmit(handleEdit)} className="space-y-4 py-2">
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="grid gap-2">
-								<Label>Tên Danh Mục (VN)</Label>
+								<Label>Tên Danh Mục (VN) *</Label>
 								<Input {...register("nameVn")} aria-invalid={!!errors.nameVn} />
 								{errors.nameVn && (
 									<p className="text-xs text-destructive">
@@ -207,7 +208,7 @@ function ActionCell({
 								)}
 							</div>
 							<div className="grid gap-2">
-								<Label>Tên Danh Mục (EN)</Label>
+								<Label>Tên Danh Mục (EN) *</Label>
 								<Input
 									{...register("nameEng")}
 									aria-invalid={!!errors.nameEng}
@@ -218,16 +219,26 @@ function ActionCell({
 									</p>
 								)}
 							</div>
+						</div>
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="grid gap-2">
 								<Label>Mô tả (VN)</Label>
-								<Input {...register("descriptionVn")} />
+								<Textarea
+									className="min-h-[80px]"
+									placeholder="Mô tả tiếng Việt..."
+									{...register("descriptionVn")}
+								/>
 							</div>
 							<div className="grid gap-2">
 								<Label>Mô tả (EN)</Label>
-								<Input {...register("descriptionEng")} />
+								<Textarea
+									className="min-h-[80px]"
+									placeholder="Mô tả tiếng Anh..."
+									{...register("descriptionEng")}
+								/>
 							</div>
 						</div>
-						<DialogFooter>
+						<DialogFooter className="pt-2">
 							<Button
 								type="button"
 								variant="outline"
@@ -250,7 +261,7 @@ function ActionCell({
 						<AlertDialogDescription>
 							Bạn có chắc chắn muốn xóa danh mục{" "}
 							<strong>
-								${category.nameVn} - ${category.nameEng}
+								{category.nameVn} - {category.nameEng}
 							</strong>
 							? Tất cả sản phẩm thuộc danh mục này sẽ bị ảnh hưởng. Hành động
 							này không thể hoàn tác.
@@ -277,19 +288,15 @@ export function columns({
 }): ColumnDef<CategoryResponse>[] {
 	return [
 		{
-			accessorKey: "pk",
-			header: "ID",
-			cell: ({ row }) => (
-				<span className="font-mono text-xs font-medium">
-					{row.getValue("pk")}
-				</span>
-			),
-		},
-		{
 			accessorKey: "code",
-			header: "Mã",
+			header: "Mã Danh Mục",
 			cell: ({ row }) => (
-				<span className="font-mono text-xs">{row.getValue("code")}</span>
+				<Badge
+					variant="outline"
+					className="font-mono text-xs font-semibold bg-muted/60 text-foreground border-border/60 px-2 py-0.5"
+				>
+					{row.getValue("code")}
+				</Badge>
 			),
 		},
 		{
