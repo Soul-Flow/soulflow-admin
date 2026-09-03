@@ -27,7 +27,7 @@ interface AccountState {
 
 	rehydrate: () => void;
 	login: (request: AuthRequest) => Promise<void>;
-	save: (account: AccountRequest, file: File) => Promise<AccountResponse>;
+	save: (account: AccountRequest, file?: File | null) => Promise<AccountResponse>;
 	deleteByPk: (pk: number) => Promise<void>;
 	findByPk: (
 		params: {
@@ -49,7 +49,7 @@ interface AccountState {
 		fromDate: string | null;
 		toDate: string | null;
 		deleted: boolean;
-		disabled: boolean;
+		disabled?: boolean | null;
 		role: RoleCode | null;
 		sortOrder: SortOrder;
 		pageNumber: number;
@@ -123,7 +123,7 @@ const useAccountStore = create<AccountState>((set, get) => ({
 
 	save: async (
 		account: AccountRequest,
-		file: File,
+		file?: File | null,
 	): Promise<AccountResponse> => {
 		try {
 			set({ loading: true });
@@ -193,7 +193,7 @@ const useAccountStore = create<AccountState>((set, get) => ({
 		fromDate = null,
 		toDate = null,
 		deleted = false,
-		disabled = false,
+		disabled = null,
 		role = null,
 		sortOrder = SortOrder.DESC,
 		pageNumber = 0,

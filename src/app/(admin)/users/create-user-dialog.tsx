@@ -114,7 +114,7 @@ export function CreateUserDialog({ onCreated }: CreateUserDialogProps) {
 					disabled: false,
 					roleRequest: { code: data.role },
 				},
-				photo ?? new File([], ""),
+				photo,
 			);
 			toast.success("Đã tạo người dùng mới thành công!", {
 				description: `Tài khoản "${data.username}" đã được thêm vào hệ thống.`,

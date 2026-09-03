@@ -35,7 +35,7 @@ export default function UsersPage() {
 	const [keyword, setKeyword] = useState<string>("");
 	const [searchKeyword, setSearchKeyword] = useState<string>("");
 	const [role, setRole] = useState<RoleCode | undefined>(undefined);
-	const [disabled, setDisabled] = useState<boolean>(false);
+	const [disabled, setDisabled] = useState<boolean | null>(null);
 	const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.DESC);
 	const [pageNumber, setPageNumber] = useState<number>(0);
 	const [pageSize, setPageSize] = useState<PageSize>(5);
@@ -48,7 +48,7 @@ export default function UsersPage() {
 		async (params: {
 			keyword: string;
 			role: RoleCode | undefined;
-			disabled: boolean;
+			disabled: boolean | null;
 			sortOrder: SortOrder;
 			pageNumber: number;
 			pageSize: number;
@@ -105,7 +105,7 @@ export default function UsersPage() {
 	};
 
 	const handleDisabledChange = (value: string) => {
-		setDisabled(value === "true");
+		setDisabled(value === "ALL" ? null : value === "true");
 		setPageNumber(0);
 	};
 
@@ -186,7 +186,7 @@ export default function UsersPage() {
 					</Select>
 
 					<Select
-						value={String(disabled)}
+						value={disabled === null ? "ALL" : String(disabled)}
 						onValueChange={handleDisabledChange}
 						disabled={loading}
 					>
@@ -194,8 +194,9 @@ export default function UsersPage() {
 							<SelectValue placeholder="Trạng thái" />
 						</SelectTrigger>
 						<SelectContent>
+							<SelectItem value="ALL">Tất cả trạng thái</SelectItem>
 							<SelectItem value="false">Đang hoạt động</SelectItem>
-							<SelectItem value="true">Đã vô hiệu hóa</SelectItem>
+							<SelectItem value="true">Đã khóa</SelectItem>
 						</SelectContent>
 					</Select>
 

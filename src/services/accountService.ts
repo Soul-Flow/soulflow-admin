@@ -23,7 +23,7 @@ export const accountService = {
 
 	save: async (
 		account: AccountRequest,
-		file: File,
+		file?: File | null,
 	): Promise<AccountResponse> => {
 		const formData = new FormData();
 
@@ -34,7 +34,7 @@ export const accountService = {
 			}),
 		);
 
-		if (file) {
+		if (file && file.size > 0) {
 			formData.append("file", file);
 		}
 
@@ -65,7 +65,7 @@ export const accountService = {
 		fromDate = null,
 		toDate = null,
 		deleted = false,
-		disabled = false,
+		disabled = null,
 		role = null,
 		sortOrder = SortOrder.DESC,
 		pageNumber = 0,
@@ -75,24 +75,27 @@ export const accountService = {
 		fromDate: string | null;
 		toDate: string | null;
 		deleted: boolean;
-		disabled: boolean;
+		disabled?: boolean | null;
 		role: RoleCode | null;
 		sortOrder: SortOrder;
 		pageNumber: number;
 		pageSize: number;
 	}): Promise<PageResponse<AccountResponse>> => {
+		const params: Record<string, unknown> = {
+			keyword,
+			fromDate,
+			toDate,
+			deleted,
+			role,
+			sortOrder,
+			pageNumber,
+			pageSize,
+		};
+		if (disabled !== null && disabled !== undefined) {
+			params.disabled = disabled;
+		}
 		const response = await api.get<PageResponse<AccountResponse>>("/account", {
-			params: {
-				keyword,
-				fromDate,
-				toDate,
-				deleted,
-				disabled,
-				role,
-				sortOrder,
-				pageNumber,
-				pageSize,
-			},
+			params,
 		});
 
 		return response.data;

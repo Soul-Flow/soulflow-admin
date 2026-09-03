@@ -74,7 +74,7 @@ function OrdersPageContent() {
 				fromDate: null,
 				toDate: null,
 				status: params.status === "ALL" ? undefined : params.status,
-				expired: false,
+				expired: undefined,
 				deleted: false,
 				sortOrder: params.sortOrder,
 				pageNumber: params.pageNumber,

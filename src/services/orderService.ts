@@ -38,7 +38,7 @@ export const orderService = {
 		fromDate = null,
 		toDate = null,
 		status,
-		expired = false,
+		expired,
 		deleted = false,
 		sortOrder = SortOrder.DESC,
 		pageNumber = 0,
@@ -54,18 +54,21 @@ export const orderService = {
 		pageNumber?: number;
 		pageSize?: number;
 	}): Promise<PageResponse<OrderResponse>> => {
+		const params: Record<string, unknown> = {
+			keyword,
+			fromDate,
+			toDate,
+			status,
+			deleted,
+			sortOrder,
+			pageNumber,
+			pageSize,
+		};
+		if (expired !== undefined && expired !== null) {
+			params.expired = expired;
+		}
 		const response = await api.get<PageResponse<OrderResponse>>("/order", {
-			params: {
-				keyword,
-				fromDate,
-				toDate,
-				status,
-				expired,
-				deleted,
-				sortOrder,
-				pageNumber,
-				pageSize,
-			},
+			params,
 		});
 
 		return response.data;
