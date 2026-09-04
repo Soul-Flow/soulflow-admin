@@ -52,32 +52,25 @@ function StatusCell({
 }) {
 	const account = row.original;
 	const { save } = useAccountStore();
-	const [isDisabled, setIsDisabled] = useState<boolean>(
-		account.disabled === "true" ||
-			account.disabled === (true as unknown as string),
-	);
+	const isDisabled = String(account.disabled) === "true";
 	const [isUpdating, setIsUpdating] = useState(false);
 
 	const handleStatusChange = async (val: string) => {
 		const newDisabledStatus = val === "true";
-		setIsDisabled(newDisabledStatus);
 		setIsUpdating(true);
 		try {
-			await save(
-				{
-					pk: Number(account.pk),
-					username: account.username,
-					password: null,
-					fullname: account.fullname,
-					email: account.email,
-					photo: account.photo,
-					phone: account.phone,
-					address: account.address,
-					disabled: newDisabledStatus,
-					roleRequest: { code: account.roleResponse?.code ?? "USER" },
-				},
-				new File([], ""),
-			);
+			await save({
+				pk: Number(account.pk),
+				username: account.username,
+				password: null,
+				fullname: account.fullname,
+				email: account.email,
+				photo: account.photo,
+				phone: account.phone,
+				address: account.address,
+				disabled: newDisabledStatus,
+				roleRequest: { code: account.roleResponse?.code ?? "USER" },
+			});
 			toast.success(
 				newDisabledStatus
 					? `Đã khóa tài khoản "${account.fullname}" thành công!`
@@ -86,7 +79,6 @@ function StatusCell({
 			onMutated();
 		} catch {
 			toast.error("Thao tác thất bại. Vui lòng thử lại.");
-			setIsDisabled(!newDisabledStatus); // Revert
 		} finally {
 			setIsUpdating(false);
 		}
@@ -127,27 +119,22 @@ function ActionCell({
 	const [showLockDialog, setShowLockDialog] = useState(false);
 	const [showViewSheet, setShowViewSheet] = useState(false);
 
-	const isDisabled =
-		account.disabled === "true" ||
-		account.disabled === (true as unknown as string);
+	const isDisabled = String(account.disabled) === "true";
 
 	const handleToggleDisabled = async () => {
 		try {
-			await save(
-				{
-					pk: Number(account.pk),
-					username: account.username,
-					password: null,
-					fullname: account.fullname,
-					email: account.email,
-					photo: account.photo,
-					phone: account.phone,
-					address: account.address,
-					disabled: !isDisabled,
-					roleRequest: { code: account.roleResponse?.code ?? "USER" },
-				},
-				new File([], ""),
-			);
+			await save({
+				pk: Number(account.pk),
+				username: account.username,
+				password: null,
+				fullname: account.fullname,
+				email: account.email,
+				photo: account.photo,
+				phone: account.phone,
+				address: account.address,
+				disabled: !isDisabled,
+				roleRequest: { code: account.roleResponse?.code ?? "USER" },
+			});
 			setShowLockDialog(false);
 			toast.success(
 				isDisabled

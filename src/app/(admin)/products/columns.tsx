@@ -54,7 +54,10 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import type { ProductResponse } from "@/interfaces/responses/product-response.interface";
+import type { CategoryResponse } from "@/interfaces/responses/category-response.interface";
 import { formatDateTime } from "@/lib/utils";
+import { SortOrder } from "@/enums/sort-order.enum";
+import useCategoryStore from "@/stores/categoryStore";
 import useProductStore from "@/stores/productStore";
 
 const editSchema = z.object({
@@ -165,9 +168,23 @@ function ActionCell({
 	const [showEditDialog, setShowEditDialog] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [images, setImages] = useState<ImagePreview[]>([]);
+	const [categories, setCategories] = useState<CategoryResponse[]>([]);
+	const { filter: filterCategory } = useCategoryStore();
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const pathname = usePathname();
+
+	useEffect(() => {
+		if (showEditDialog) {
+			filterCategory({
+				keyword: null,
+				deleted: false,
+				sortOrder: SortOrder.DESC,
+				pageNumber: 0,
+				pageSize: 100,
+			}).then((page) => setCategories(page?.content ?? []));
+		}
+	}, [showEditDialog, filterCategory]);
 
 	useEffect(() => {
 		if (
@@ -246,6 +263,7 @@ function ActionCell({
 		handleSubmit,
 		reset,
 		setValue,
+		watch,
 		formState: { errors, isSubmitting },
 	} = useForm<EditFormValues>({
 		resolver: zodResolver(editSchema),
@@ -574,6 +592,29 @@ function ActionCell({
 
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="grid gap-2">
+								<Label>Danh mục *</Label>
+								<Select
+									value={String(watch("categoryPk") || product.categoryPk)}
+									onValueChange={(v) => setValue("categoryPk", Number(v))}
+								>
+									<SelectTrigger aria-invalid={!!errors.categoryPk}>
+										<SelectValue placeholder="Chọn danh mục" />
+									</SelectTrigger>
+									<SelectContent>
+										{categories.map((c) => (
+											<SelectItem key={c.pk} value={String(c.pk)}>
+												{c.nameVn} - {c.nameEng}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								{errors.categoryPk && (
+									<p className="text-xs text-destructive">
+										{errors.categoryPk.message}
+									</p>
+								)}
+							</div>
+							<div className="grid gap-2">
 								<Label>Trạng thái</Label>
 								<select
 									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-2xs"
@@ -584,19 +625,6 @@ function ActionCell({
 								>
 									<option value="true">Kinh doanh</option>
 									<option value="false">Tạm ngưng</option>
-								</select>
-							</div>
-							<div className="grid gap-2">
-								<Label>Thiết kế theo yêu cầu (Customised)</Label>
-								<select
-									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-2xs"
-									onChange={(e) =>
-										setValue("customised", e.target.value === "true")
-									}
-									defaultValue={String(isCustomised)}
-								>
-									<option value="false">Mặc định (Không)</option>
-									<option value="true">Cho phép (Có)</option>
 								</select>
 							</div>
 						</div>
@@ -610,6 +638,9 @@ function ActionCell({
 									{...register("descriptionVn")}
 								/>
 							</div>
+						</div>
+
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div className="grid gap-2">
 								<Label>Mô tả (EN)</Label>
 								<Textarea

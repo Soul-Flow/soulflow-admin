@@ -19,6 +19,8 @@ export interface OrderResponse {
 
 	createdDate: string;
 
+	updatedDate?: string;
+
 	expiredDate: string;
 
 	status: string;

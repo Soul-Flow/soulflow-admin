@@ -257,47 +257,25 @@ export function CreateProductDialog({ onCreated }: CreateProductDialogProps) {
 						</div>
 					</div>
 
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div className="grid gap-2">
-							<Label>Danh mục *</Label>
-							<Select onValueChange={(v) => setValue("categoryPk", Number(v))}>
-								<SelectTrigger aria-invalid={!!errors.categoryPk}>
-									<SelectValue placeholder="Chọn danh mục" />
-								</SelectTrigger>
-								<SelectContent>
-									{categories.map((c) => (
-										<SelectItem key={c.pk} value={String(c.pk)}>
-											{c.nameVn} - {c.nameEng}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							{errors.categoryPk && (
-								<p className="text-xs text-destructive">
-									{errors.categoryPk.message}
-								</p>
-							)}
-						</div>
-						<div className="grid gap-2">
-							<Label>Thiết kế theo yêu cầu (Customised)</Label>
-							<Select
-								onValueChange={(v) => setValue("customised", v === "true")}
-								defaultValue="false"
-							>
-								<SelectTrigger aria-invalid={!!errors.customised}>
-									<SelectValue placeholder="Chọn loại" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="false">Mặc định (Không)</SelectItem>
-									<SelectItem value="true">Cho phép (Có)</SelectItem>
-								</SelectContent>
-							</Select>
-							{errors.customised && (
-								<p className="text-xs text-destructive">
-									{errors.customised.message}
-								</p>
-							)}
-						</div>
+					<div className="grid gap-2">
+						<Label>Danh mục *</Label>
+						<Select onValueChange={(v) => setValue("categoryPk", Number(v))}>
+							<SelectTrigger aria-invalid={!!errors.categoryPk}>
+								<SelectValue placeholder="Chọn danh mục" />
+							</SelectTrigger>
+							<SelectContent>
+								{categories.map((c) => (
+									<SelectItem key={c.pk} value={String(c.pk)}>
+										{c.nameVn} - {c.nameEng}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						{errors.categoryPk && (
+							<p className="text-xs text-destructive">
+								{errors.categoryPk.message}
+							</p>
+						)}
 					</div>
 
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -267,7 +267,12 @@ function ActionCell({
 							</Badge>
 						</SheetTitle>
 						<SheetDescription>
-							Ngày tạo đơn: {formatDateTime(order.createdDate)} {order.expiredDate ? `• Hết hạn: ${formatDateTime(order.expiredDate)}` : ""}
+							Ngày tạo đơn: {formatDateTime(order.createdDate)}
+							{order.status === OrderStatus.DELIVERED && (order.updatedDate || order.createdDate)
+								? ` • Hoàn thành: ${formatDateTime(order.updatedDate || order.createdDate)}`
+								: order.status === OrderStatus.CANCELLED && (order.updatedDate || order.createdDate)
+									? ` • Đã hủy: ${formatDateTime(order.updatedDate || order.createdDate)}`
+									: ""}
 						</SheetDescription>
 					</SheetHeader>
 
